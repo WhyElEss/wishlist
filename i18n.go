@@ -23,7 +23,7 @@ var messages = map[string]map[string]string{
 		"go_store":              "Открыть в магазине",
 		"back":                  "← К списку",
 		"reserve_title":         "Подарить этот подарок?",
-		"reserve_explain":       "Подарок будет отмечен как занятый: другие увидят, что его уже кто-то дарит, но не узнают кто. Имя и регистрация не нужны. Бронь действует %d дн. — если за это время не отметить покупку, подарок снова станет доступен.",
+		"reserve_explain":       "Подарок будет отмечен как занятый: другие увидят, что его уже кто-то дарит, но не узнают кто. Имя и регистрация не нужны. Бронь действует %s — если за это время не отметить покупку, подарок снова станет доступен.",
 		"email_label":           "Email — пришлём ссылку на подарок",
 		"email_hint":            "По этой ссылке вы потом отметите покупку. Ещё одно письмо-напоминание придёт за 3 дня до конца брони. Адрес не видят ни владелец списка, ни другие гости, и больше он ни для чего не используется. Поле можно оставить пустым.",
 		"reserve_confirm":       "Да, дарю",
@@ -83,7 +83,7 @@ var messages = map[string]map[string]string{
 		"go_store":              "Open in store",
 		"back":                  "← Back to the list",
 		"reserve_title":         "Gift this?",
-		"reserve_explain":       "The gift will be marked as taken: others will see that someone is gifting it, but not who. No name or sign-up needed. The reservation lasts %d days — if it is not marked as bought by then, the gift becomes available again.",
+		"reserve_explain":       "The gift will be marked as taken: others will see that someone is gifting it, but not who. No name or sign-up needed. The reservation lasts %s — if it is not marked as bought by then, the gift becomes available again.",
 		"email_label":           "Email — we’ll send you a link to the gift",
 		"email_hint":            "You will use this link later to mark the gift as bought. One more reminder comes 3 days before the reservation ends. Neither the list owner nor other guests see the address, and it is used for nothing else. You may leave it empty.",
 		"reserve_confirm":       "Yes, I’ll gift it",
@@ -202,12 +202,40 @@ func itemPrice(it *Item, lang string) string {
 	return p
 }
 
+// pluralRU picks the noun form for a count by the Unicode CLDR rules for
+// Russian: one (1, 21, 101: «день»), few (2–4, 22–24: «дня»), many (0, 5–20,
+// 11–14, 100: «дней»).
+func pluralRU(n int, one, few, many string) string {
+	if n < 0 {
+		n = -n
+	}
+	switch {
+	case n%10 == 1 && n%100 != 11:
+		return one
+	case n%10 >= 2 && n%10 <= 4 && (n%100 < 12 || n%100 > 14):
+		return few
+	}
+	return many
+}
+
+// days is "14 дней" / "14 days" with the noun agreeing with the number.
+func days(lang string, n int) string {
+	if lang == "ru" {
+		return strconv.Itoa(n) + " " + pluralRU(n, "день", "дня", "дней")
+	}
+	if n == 1 {
+		return "1 day"
+	}
+	return strconv.Itoa(n) + " days"
+}
+
 func itoa(n int) string { return strconv.Itoa(n) }
 
 var templateFuncs = template.FuncMap{
 	"t":    tr,
 	"tf":   tf,
 	"date": formatDate,
+	"days": days,
 	"datetime": func(t *time.Time) string {
 		if t == nil {
 			return ""

@@ -521,3 +521,19 @@ func TestHotCardFrame(t *testing.T) {
 		t.Error("style.css lost the red frame for ★ cards")
 	}
 }
+
+func TestRussianPlurals(t *testing.T) {
+	// Examples from the Unicode CLDR plural rules for Russian.
+	for n, want := range map[int]string{
+		1: "1 день", 21: "21 день", 31: "31 день", 101: "101 день",
+		2: "2 дня", 3: "3 дня", 4: "4 дня", 22: "22 дня", 24: "24 дня", 102: "102 дня",
+		0: "0 дней", 5: "5 дней", 11: "11 дней", 12: "12 дней", 14: "14 дней", 19: "19 дней", 20: "20 дней", 100: "100 дней", 111: "111 дней", 112: "112 дней",
+	} {
+		if got := days("ru", n); got != want {
+			t.Errorf("days(ru, %d) = %q, want %q", n, got, want)
+		}
+	}
+	if days("en", 1) != "1 day" || days("en", 14) != "14 days" {
+		t.Errorf("English: %q, %q", days("en", 1), days("en", 14))
+	}
+}

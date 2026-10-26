@@ -13,7 +13,7 @@
     </div>
   </div>
   <h2>{{t .Lang "reserve_title"}}</h2>
-  <p>{{tf .Lang "reserve_explain" .Days}}</p>
+  <p>{{tf .Lang "reserve_explain" (days .Lang .Days)}}</p>
   <div class="ship-rules">
     <h3>{{t .Lang "ship_rules_title"}}</h3>
     <ul>
