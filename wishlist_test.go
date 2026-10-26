@@ -457,3 +457,42 @@ func TestFixedRegionOffersOneAddress(t *testing.T) {
 		t.Error("auto gift: both addresses and the switch expected")
 	}
 }
+
+func TestIconsAndLinkPreview(t *testing.T) {
+	srv, app := newTestApp(t)
+	app.cfg.BaseURL = "https://wishlist.example"
+	for path, ctype := range map[string]string{
+		"/favicon.ico":           "image/",
+		"/apple-touch-icon.png":  "image/png",
+		"/static/favicon-32.png": "image/png",
+		"/static/og.png":         "image/png",
+		"/static/icon.svg":       "image/svg+xml",
+	} {
+		resp, err := http.Get(srv.URL + path)
+		if err != nil {
+			t.Fatal(err)
+		}
+		resp.Body.Close()
+		if resp.StatusCode != http.StatusOK || !strings.HasPrefix(resp.Header.Get("Content-Type"), ctype) {
+			t.Errorf("%s: %d %q", path, resp.StatusCode, resp.Header.Get("Content-Type"))
+		}
+	}
+
+	resp, _ := http.Get(srv.URL + "/")
+	page := body(t, resp)
+	for _, want := range []string{
+		`<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">`,
+		`<meta property="og:image" content="https://wishlist.example/static/og.png?v=`,
+		`<meta name="twitter:card" content="summary_large_image">`,
+	} {
+		if !strings.Contains(page, want) {
+			t.Errorf("index lacks %s", want)
+		}
+	}
+
+	resp, _ = http.Get(srv.URL + "/robots.txt")
+	robots := body(t, resp)
+	if !strings.Contains(robots, "User-agent: Twitterbot") || !strings.Contains(robots, "User-agent: *\nDisallow: /\n") {
+		t.Errorf("robots.txt:\n%s", robots)
+	}
+}

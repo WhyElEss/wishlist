@@ -81,8 +81,14 @@ func (a *App) routes() http.Handler {
 	mux.HandleFunc("GET /img/{name}", a.handleImage)
 	mux.HandleFunc("GET /robots.txt", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
-		w.Write([]byte("User-agent: *\nDisallow: /\n"))
+		w.Write([]byte(robotsTxt))
 	})
+	// Browsers and Safari's Favorites look for these at the site root.
+	for _, name := range []string{"favicon.ico", "apple-touch-icon.png"} {
+		mux.Handle("GET /"+name, cacheFor(24*time.Hour, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			http.ServeFileFS(w, r, static, name)
+		})))
+	}
 	mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, r *http.Request) { w.Write([]byte("ok\n")) })
 
 	mux.HandleFunc("GET /{$}", a.handleIndex)
@@ -110,6 +116,25 @@ func (a *App) routes() http.Handler {
 
 	return a.secure(mux)
 }
+
+// robotsTxt keeps search engines out but lets link-preview crawlers read the
+// public pages, so shared links get a card. Reservation links and the admin
+// stay closed to them too.
+const robotsTxt = `User-agent: Twitterbot
+User-agent: facebookexternalhit
+User-agent: TelegramBot
+User-agent: Slackbot
+User-agent: Discordbot
+User-agent: WhatsApp
+User-agent: LinkedInBot
+User-agent: Cardyb
+Allow: /
+Disallow: /admin
+Disallow: /r/
+
+User-agent: *
+Disallow: /
+`
 
 func cacheFor(d time.Duration, h http.Handler) http.Handler {
 	maxAge := int(d.Seconds())
@@ -199,15 +224,20 @@ type base struct {
 	Version   string
 	Admin     bool
 	NoNav     bool // login page
+
+	// For link previews (Open Graph): public origin and the site's intro.
+	Origin      string
+	Description string
 }
 
 func (a *App) base(r *http.Request, lang, pageTitle string) base {
-	var site string
-	a.store.view(func(d *Data) { site = d.Settings.title(lang) })
+	var site, intro string
+	a.store.view(func(d *Data) { site, intro = d.Settings.title(lang), d.Settings.intro(lang) })
 	if pageTitle == "" {
 		pageTitle = site
 	}
-	return base{Lang: lang, PageTitle: pageTitle, SiteTitle: site, Path: r.URL.Path, Version: version}
+	return base{Lang: lang, PageTitle: pageTitle, SiteTitle: site, Path: r.URL.Path, Version: version,
+		Origin: a.origin(r), Description: intro}
 }
 
 func (a *App) render(w http.ResponseWriter, status int, name string, data any) {

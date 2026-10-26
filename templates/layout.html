@@ -6,6 +6,27 @@
 <meta name="robots" content="noindex, nofollow">
 <title>{{.PageTitle}}</title>
 <link rel="icon" href="/static/icon.svg" type="image/svg+xml">
+<link rel="icon" type="image/png" sizes="32x32" href="/static/favicon-32.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<meta name="theme-color" content="#c2410c">
+{{if not .Admin}}
+<meta name="description" content="{{.Description}}">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="{{.SiteTitle}}">
+<meta property="og:title" content="{{.PageTitle}}">
+<meta property="og:description" content="{{.Description}}">
+<meta property="og:url" content="{{.Origin}}/">
+<meta property="og:locale" content="{{if eq .Lang "ru"}}ru_RU{{else}}en_US{{end}}">
+<meta property="og:image" content="{{.Origin}}/static/og.png?v={{.Version}}">
+<meta property="og:image:type" content="image/png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="{{.SiteTitle}}">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="{{.PageTitle}}">
+<meta name="twitter:description" content="{{.Description}}">
+<meta name="twitter:image" content="{{.Origin}}/static/og.png?v={{.Version}}">
+{{end}}
 <link rel="stylesheet" href="/static/style.css?v={{.Version}}">
 <script src="/static/app.js?v={{.Version}}" defer></script>
 </head>
