@@ -275,6 +275,9 @@ type reservationPage struct {
 	ExpiresAt time.Time
 	Purchased bool
 	Regions   []regionView
+
+	// FixedRegion: the item allows a single address, so there is no switch.
+	FixedRegion bool
 }
 
 func (a *App) handleReservation(w http.ResponseWriter, r *http.Request) {
@@ -301,10 +304,17 @@ func (a *App) handleReservation(w http.ResponseWriter, r *http.Request) {
 		a.renderMessage(w, r, http.StatusNotFound, tr(lang, "not_found"))
 		return
 	}
-	if itemRegion == "" {
+	// A region set on the item is the only address offered: shipping across
+	// the border means duties and international postage. "Auto" offers both,
+	// starting from the visitor's country.
+	codes := []string{"US", "CA"}
+	if itemRegion != "" {
+		codes = []string{itemRegion}
+		p.FixedRegion = true
+	} else {
 		itemRegion = a.visitorRegion(r)
 	}
-	for _, code := range []string{"US", "CA"} {
+	for _, code := range codes {
 		addr := settings.address(code)
 		rv := regionView{Code: code, Active: code == itemRegion}
 		if !addr.empty() {

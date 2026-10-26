@@ -424,3 +424,36 @@ func TestOrderEndpoint(t *testing.T) {
 		t.Error("★ card is not marked hot")
 	}
 }
+
+func TestFixedRegionOffersOneAddress(t *testing.T) {
+	srv, app := newTestApp(t)
+	app.store.update(func(d *Data) error {
+		d.Settings.AddrUS = Address{Name: "Me", Line1: "US WAREHOUSE", PostalCode: "14132", Country: "US"}
+		d.Settings.AddrCA = Address{Name: "Me", Line1: "CA HOME", City: "Kitchener", Country: "CA"}
+		d.Items = []*Item{
+			{ID: "us", URL: "https://www.amazon.com/dp/X", Title: "US gift", Region: "US", Quantity: 1, Status: statusActive},
+			{ID: "auto", URL: "https://shop.example/x", Title: "Auto gift", Quantity: 1, Status: statusActive},
+		}
+		return nil
+	})
+	reserve := func(id string) string {
+		resp, err := newClient(t).PostForm(srv.URL+"/item/"+id+"/reserve", url.Values{})
+		if err != nil {
+			t.Fatal(err)
+		}
+		return body(t, resp)
+	}
+
+	page := reserve("us")
+	if !strings.Contains(page, `data-copy-value="US WAREHOUSE"`) {
+		t.Error("US gift: US address missing")
+	}
+	if strings.Contains(page, "CA HOME") || strings.Contains(page, `data-region-panel="CA"`) || strings.Contains(page, `class="tabs"`) {
+		t.Error("US gift: Canadian address or the country switch is offered")
+	}
+
+	page = reserve("auto")
+	if !strings.Contains(page, "US WAREHOUSE") || !strings.Contains(page, "CA HOME") || !strings.Contains(page, `class="tabs"`) {
+		t.Error("auto gift: both addresses and the switch expected")
+	}
+}

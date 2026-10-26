@@ -21,9 +21,9 @@
     <div class="row">
       <label>Куда доставлять
         <select name="region">
-          <option value=""{{if eq .Item.Region ""}} selected{{end}}>Авто: США для посетителей из США, иначе Канада</option>
-          <option value="US"{{if eq .Item.Region "US"}} selected{{end}}>США</option>
-          <option value="CA"{{if eq .Item.Region "CA"}} selected{{end}}>Канада</option>
+          <option value=""{{if eq .Item.Region ""}} selected{{end}}>Авто: гость выбирает, по умолчанию его страна</option>
+          <option value="US"{{if eq .Item.Region "US"}} selected{{end}}>Только США (Shippsy)</option>
+          <option value="CA"{{if eq .Item.Region "CA"}} selected{{end}}>Только Канада</option>
         </select>
       </label>
       <label>Статус
