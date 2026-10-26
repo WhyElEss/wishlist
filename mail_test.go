@@ -53,7 +53,7 @@ func TestMailRefusesPlaintextAuth(t *testing.T) {
 	if strings.Contains(seen, "AUTH") {
 		t.Errorf("credentials sent without encryption: %s", seen)
 	}
-	if !strings.HasPrefix(seen, "EHLO wishlist.example.com|") {
+	if first, _, _ := strings.Cut(seen, "|"); first != "EHLO wishlist.example.com" {
 		t.Errorf("client did not introduce itself by the site name: %s", seen)
 	}
 }
