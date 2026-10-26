@@ -8,6 +8,7 @@
   --accent-text: #ffffff;
   --mine: #0f766e;
   --danger: #b91c1c;
+  --hot: #dc2626;
   --ok-bg: #ecfdf5;
   --ok-text: #065f46;
   --warn-bg: #fffbeb;
@@ -28,6 +29,7 @@
     --accent-text: #1a0f06;
     --mine: #2dd4bf;
     --danger: #f87171;
+    --hot: #ef4444;
     --ok-bg: #0d2a22;
     --ok-text: #a7f3d0;
     --warn-bg: #2d2410;
@@ -76,6 +78,7 @@ button.link { background: none; border: 0; padding: 0; color: var(--muted); font
 .card .btn { width: 100%; }
 .card.taken { opacity: .55; }
 .card.taken .thumb img { filter: grayscale(1); }
+.card.hot { border-color: var(--hot); box-shadow: 0 0 0 1px var(--hot); }
 .card.mine { border-color: var(--mine); box-shadow: 0 0 0 1px var(--mine); }
 
 .meta { display: flex; gap: 10px; align-items: baseline; flex-wrap: wrap; }
@@ -84,7 +87,7 @@ button.link { background: none; border: 0; padding: 0; color: var(--muted); font
 .notes { margin: 0; font-size: .9rem; color: var(--muted); white-space: pre-line; }
 .qty { margin: 0; font-size: .85rem; font-weight: 600; }
 .badge { align-self: flex-start; font-size: .75rem; font-weight: 700; padding: 2px 8px; border-radius: 99px; }
-.badge.hot { background: var(--accent); color: var(--accent-text); }
+.badge.hot { background: var(--hot); color: #fff; }
 
 .btn {
   display: inline-flex; align-items: center; justify-content: center; gap: 6px;

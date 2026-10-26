@@ -119,9 +119,13 @@ func (a *App) handleIndex(w http.ResponseWriter, r *http.Request) {
 			cards = append(cards, c)
 		}
 	})
-	// The admin's order, with gifts nobody can take any more at the end.
+	// Gifts that can still be taken first; among them "really want" (★) above
+	// the rest; within each group the admin's own order.
 	sort.SliceStable(cards, func(i, j int) bool {
-		return cards[i].Available && !cards[j].Available
+		if cards[i].Available != cards[j].Available {
+			return cards[i].Available
+		}
+		return cards[i].Priority > cards[j].Priority
 	})
 	p := indexPage{base: a.base(r, lang, ""), Intro: intro, Cards: cards}
 	if r.URL.Query().Get("m") == "cancelled" {

@@ -408,4 +408,19 @@ func TestOrderEndpoint(t *testing.T) {
 	if ic, ia := strings.Index(page, "/item/c"), strings.Index(page, "/item/a"); ic < 0 || ia < 0 || ic > ia {
 		t.Error("public list does not follow the admin order")
 	}
+
+	// ★ lifts a gift above the manual order and marks its card.
+	app.store.update(func(d *Data) error {
+		d.item("b").Priority = 1
+		return nil
+	})
+	resp, _ = http.Get(srv.URL + "/")
+	page = body(t, resp)
+	ib, ic, ia := strings.Index(page, "/item/b"), strings.Index(page, "/item/c"), strings.Index(page, "/item/a")
+	if !(ib >= 0 && ib < ic && ic < ia) {
+		t.Errorf("public order with ★ on b: b=%d c=%d a=%d, want b, c, a", ib, ic, ia)
+	}
+	if !strings.Contains(page, `class="card hot"`) {
+		t.Error("★ card is not marked hot")
+	}
 }

@@ -3,7 +3,7 @@
 {{if not .Cards}}<p class="empty">{{t .Lang "empty"}}</p>{{end}}
 <div class="grid">
 {{range .Cards}}
-  <article class="card{{if .MineToken}} mine{{else if not .Available}} taken{{end}}">
+  <article class="card{{if .Priority}} hot{{end}}{{if .MineToken}} mine{{else if not .Available}} taken{{end}}">
     <a class="thumb" href="{{.URL}}" target="_blank" rel="noopener noreferrer">
       {{if .Image}}<img src="/img/{{.Image}}" alt="" loading="lazy">{{else}}<span class="noimg">🎁</span>{{end}}
     </a>
