@@ -11,6 +11,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"os/exec"
 	"os/signal"
 	"strings"
 	"syscall"
@@ -61,9 +62,15 @@ func main() {
 }
 
 // runHashpw reads a password from stdin and prints the ADMIN_PASSWORD_HASH line.
+// On a terminal the input is hidden with stty (busybox has it in the image).
 func runHashpw() {
 	fmt.Fprint(os.Stderr, "Admin password: ")
+	hidden := stty("-echo") == nil
 	line, err := bufio.NewReader(os.Stdin).ReadString('\n')
+	if hidden {
+		stty("echo")
+		fmt.Fprintln(os.Stderr)
+	}
 	if err != nil && line == "" {
 		fmt.Fprintln(os.Stderr, "no password read")
 		os.Exit(1)
@@ -79,4 +86,11 @@ func runHashpw() {
 		os.Exit(1)
 	}
 	fmt.Println("ADMIN_PASSWORD_HASH=" + h)
+}
+
+// stty runs stty on the controlling terminal; it fails when stdin is not one.
+func stty(arg string) error {
+	cmd := exec.Command("stty", arg)
+	cmd.Stdin = os.Stdin
+	return cmd.Run()
 }
