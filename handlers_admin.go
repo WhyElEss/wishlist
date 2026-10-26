@@ -89,7 +89,7 @@ func (a *App) handleLogout(w http.ResponseWriter, r *http.Request) {
 
 type adminRow struct {
 	ID, Title, Image, PriceText, Site, RegionText, StatusText, Status, ReservedText string
-	Priority, Quantity                                                            int
+	Priority, Quantity                                                              int
 }
 
 type adminPage struct {
