@@ -16,11 +16,11 @@
   </div>
 
   <h2>{{t .Lang "res_ship_to"}}</h2>
-  <p class="hint">{{t .Lang "res_ship_own"}}</p>
+  <p class="ship-note">{{t .Lang "res_ship_own"}}</p>
   {{if .FixedRegion}}
-  <p class="hint">{{tf .Lang "res_ship_fixed" (region .Lang (index .Regions 0).Code)}}</p>
+  <p class="ship-note">{{tf .Lang "res_ship_fixed" (region .Lang (index .Regions 0).Code)}}</p>
   {{else}}
-  <p class="hint">{{t .Lang "res_ship_hint"}}</p>
+  <p class="ship-note">{{t .Lang "res_ship_hint"}}</p>
   <div class="tabs" role="tablist">
     {{range .Regions}}<button type="button" class="tab{{if .Active}} active{{end}}" data-region="{{.Code}}">{{region $.Lang .Code}}</button>{{end}}
   </div>

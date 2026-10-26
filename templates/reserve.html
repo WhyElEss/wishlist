@@ -14,6 +14,14 @@
   </div>
   <h2>{{t .Lang "reserve_title"}}</h2>
   <p>{{tf .Lang "reserve_explain" .Days}}</p>
+  <div class="ship-rules">
+    <h3>{{t .Lang "ship_rules_title"}}</h3>
+    <ul>
+      <li>{{t .Lang "ship_rule_own"}}</li>
+      <li>{{t .Lang "ship_rule_remote"}}</li>
+      <li>{{t .Lang "ship_rule_fixed"}}</li>
+    </ul>
+  </div>
   <form method="post" action="/item/{{.Card.ID}}/reserve" class="form">
     {{if .EmailEnabled}}
       <label>{{t .Lang "email_label"}}

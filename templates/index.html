@@ -3,13 +3,15 @@
 {{if not .Cards}}<p class="empty">{{t .Lang "empty"}}</p>{{end}}
 <div class="grid">
 {{range .Cards}}
-  <article class="card{{if .Priority}} hot{{end}}{{if .MineToken}} mine{{else if not .Available}} taken{{end}}">
-    <a class="thumb" href="{{.URL}}" target="_blank" rel="noopener noreferrer">
+  {{/* The whole card leads to the next step; shop links come after it. */}}
+  {{$href := ""}}{{if .MineToken}}{{$href = print "/r/" .MineToken}}{{else if .Available}}{{$href = print "/item/" .ID}}{{end}}
+  <article class="card{{if .Priority}} hot{{end}}{{if .MineToken}} mine{{else if not .Available}} taken{{end}}{{if $href}} linked{{end}}">
+    <div class="thumb">
       {{if .Image}}<img src="/img/{{.Image}}" alt="" loading="lazy">{{else}}<span class="noimg">🎁</span>{{end}}
-    </a>
+    </div>
     <div class="body">
       {{if .Priority}}<span class="badge hot">★ {{t $.Lang "priority_high"}}</span>{{end}}
-      <h2><a href="{{.URL}}" target="_blank" rel="noopener noreferrer">{{.Title}}</a></h2>
+      <h2>{{if $href}}<a class="card-link" href="{{$href}}">{{.Title}}</a>{{else}}{{.Title}}{{end}}</h2>
       <div class="meta">
         {{if .PriceText}}<span class="price">{{.PriceText}}</span>{{end}}
         <span class="site">{{.Site}}</span>
@@ -18,9 +20,9 @@
       {{if gt .Quantity 1}}<p class="qty">{{tf $.Lang "left" .Left .Quantity}}</p>{{end}}
       <div class="actions">
         {{if .MineToken}}
-          <a class="btn mine" href="/r/{{.MineToken}}">{{t $.Lang "yours"}} · {{t $.Lang "manage"}}</a>
+          <span class="btn mine">{{t $.Lang "yours"}} · {{t $.Lang "manage"}}</span>
         {{else if .Available}}
-          <a class="btn primary" href="/item/{{.ID}}">{{t $.Lang "gift_this"}}</a>
+          <span class="btn primary">{{t $.Lang "gift_this"}}</span>
         {{else}}
           <span class="btn disabled">{{t $.Lang "taken"}}</span>
         {{end}}

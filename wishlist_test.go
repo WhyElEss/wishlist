@@ -200,8 +200,12 @@ func TestFlow(t *testing.T) {
 	// Public list shows it as available.
 	guest := newClient(t)
 	resp, _ = guest.Get(srv.URL + "/")
-	if page := body(t, resp); !strings.Contains(page, "/item/"+id) {
-		t.Fatalf("index lacks reserve link:\n%s", page)
+	page = body(t, resp)
+	if !strings.Contains(page, `<a class="card-link" href="/item/`+id+`">`) {
+		t.Fatalf("index card does not lead to the reserve step:\n%s", page)
+	}
+	if strings.Contains(page, shop.URL) {
+		t.Error("index links to the shop; shop links belong to the later steps")
 	}
 
 	// Two guests reserve at the same time: exactly one wins.
@@ -420,7 +424,7 @@ func TestOrderEndpoint(t *testing.T) {
 	if !(ib >= 0 && ib < ic && ic < ia) {
 		t.Errorf("public order with ★ on b: b=%d c=%d a=%d, want b, c, a", ib, ic, ia)
 	}
-	if !strings.Contains(page, `class="card hot"`) {
+	if !strings.Contains(page, `class="card hot linked"`) {
 		t.Error("★ card is not marked hot")
 	}
 }
