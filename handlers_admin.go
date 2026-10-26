@@ -423,7 +423,8 @@ func (a *App) handleRefresh(w http.ResponseWriter, r *http.Request) {
 			oldImage = it.Image
 			it.Image, it.ImageSrc = newImage, meta.Image
 		}
-		if it.Title == "" {
+		// Replace the placeholder (the shop's host name) set when nothing could be read.
+		if meta.Title != "" && (it.Title == "" || it.Title == siteName(it.URL)) {
 			it.Title = meta.Title
 		}
 		it.FetchNote = note
