@@ -2,10 +2,10 @@ package main
 
 import (
 	"context"
-	"strings"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"strings"
 	"testing"
 )
 

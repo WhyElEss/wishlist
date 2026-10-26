@@ -25,9 +25,9 @@ type cardView struct {
 	Available, Unavailable                        bool
 
 	// Discogs gifts: Mint/NM only; Grading holds the definitions.
-	Discogs bool
-	Grading grading
-	MineToken                                     string
+	Discogs   bool
+	Grading   grading
+	MineToken string
 }
 
 func makeCard(it *Item, now time.Time, lang string) cardView {
