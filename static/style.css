@@ -80,6 +80,9 @@ button.link { background: none; border: 0; padding: 0; color: var(--muted); font
 .card.linked { cursor: pointer; }
 .card.linked:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgb(0 0 0 / .12); }
 .card.linked:hover .btn.primary { filter: brightness(1.08); }
+/* The button is only a label: the card link underneath takes the click. Without
+   this the hover filter lifts the button above the link and swallows clicks. */
+.card.linked .btn { pointer-events: none; }
 .card.hot.linked:hover { box-shadow: 0 0 0 1px var(--hot), 0 8px 24px rgb(0 0 0 / .12); }
 .card.mine.linked:hover { box-shadow: 0 0 0 1px var(--mine), 0 8px 24px rgb(0 0 0 / .12); }
 @media (prefers-reduced-motion: reduce) { .card.linked:hover { transform: none; } }

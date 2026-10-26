@@ -537,3 +537,15 @@ func TestRussianPlurals(t *testing.T) {
 		t.Errorf("English: %q, %q", days("en", 1), days("en", 14))
 	}
 }
+
+// A filter on hover lifted the card's button above the card link once, so
+// clicks on «Подарю это» did nothing.
+func TestCardButtonLetsClicksThrough(t *testing.T) {
+	css, err := assets.ReadFile("static/style.css")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(string(css), ".card.linked .btn { pointer-events: none; }") {
+		t.Error("the card button can capture clicks meant for the card link")
+	}
+}
