@@ -487,20 +487,20 @@ func (a *App) handleDelete(w http.ResponseWriter, r *http.Request) {
 
 type settingsPage struct {
 	base
-	Settings        Settings
-	Addresses       []addressForm
-	NotifyTo        string
-	MailEnabled     bool
-	MailFrom        string
-	BaseURL         string
+	Settings    Settings
+	Addresses   []addressForm
+	NotifyTo    string
+	MailEnabled bool
+	MailFrom    string
+	BaseURL     string
 }
 
 func (a *App) handleSettingsForm(w http.ResponseWriter, r *http.Request) {
 	p := settingsPage{
-		base:            a.adminBase(r, "Настройки"),
-		NotifyTo:        notifyTo(a.cfg),
-		MailEnabled:     a.mail.enabled(),
-		BaseURL:         a.cfg.BaseURL,
+		base:        a.adminBase(r, "Настройки"),
+		NotifyTo:    notifyTo(a.cfg),
+		MailEnabled: a.mail.enabled(),
+		BaseURL:     a.cfg.BaseURL,
 	}
 	if e := r.URL.Query().Get("mailerr"); e != "" {
 		p.Error = "Почта: " + e
