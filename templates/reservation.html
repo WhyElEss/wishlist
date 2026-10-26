@@ -22,9 +22,19 @@
   </div>
   {{range .Regions}}
   <div class="address" data-region-panel="{{.Code}}"{{if not .Active}} hidden{{end}}>
-    {{if .Address}}
-      <pre id="addr-{{.Code}}">{{.Address}}</pre>
-      <button type="button" class="btn small" data-copy="addr-{{.Code}}" data-copied="{{t $.Lang "copied"}}">{{t $.Lang "copy"}}</button>
+    {{if .Fields}}
+      <div class="addr-grid">
+        {{range .Fields}}
+        <button type="button" class="addr-field" data-copy-value="{{.Value}}" data-copied="{{t $.Lang "copied"}}">
+          <span class="addr-label">{{t $.Lang (print "addr_" .Key)}}</span>
+          <span class="addr-value">{{.Value}}</span>
+        </button>
+        {{end}}
+      </div>
+      <div class="addr-foot">
+        <span class="hint">{{t $.Lang "tap_to_copy"}}</span>
+        <button type="button" class="btn copyall" data-copy-value="{{.CopyAll}}" data-copied="{{t $.Lang "copied"}}">{{t $.Lang "copy_all"}}</button>
+      </div>
     {{else}}
       <p>{{t $.Lang "no_address"}}</p>
     {{end}}

@@ -465,6 +465,7 @@ func (a *App) handleDelete(w http.ResponseWriter, r *http.Request) {
 type settingsPage struct {
 	base
 	Settings        Settings
+	Addresses       []addressForm
 	TelegramEnabled bool
 	MailEnabled     bool
 	BaseURL         string
@@ -481,7 +482,25 @@ func (a *App) handleSettingsForm(w http.ResponseWriter, r *http.Request) {
 		p.Error = "Telegram: " + e
 	}
 	a.store.view(func(d *Data) { p.Settings = d.Settings })
+	p.Addresses = []addressForm{
+		{Prefix: "us", Title: "США (Shippsy)", Fields: p.Settings.AddrUS.fields()},
+		{Prefix: "ca", Title: "Канада", Fields: p.Settings.AddrCA.fields()},
+	}
 	a.render(w, http.StatusOK, "settings", p)
+}
+
+// addressForm is one country's block of address inputs, named <prefix>_<key>.
+type addressForm struct {
+	Prefix, Title string
+	Fields        []addrField
+}
+
+func addressFromForm(r *http.Request, prefix string) Address {
+	v := func(key string) string { return limit(r.FormValue(prefix+"_"+key), 200) }
+	return Address{
+		Name: v("name"), Line1: v("line1"), Line2: v("line2"), City: v("city"),
+		Province: v("province"), PostalCode: v("postal"), Country: v("country"),
+	}
 }
 
 func (a *App) handleSettings(w http.ResponseWriter, r *http.Request) {
@@ -497,8 +516,8 @@ func (a *App) handleSettings(w http.ResponseWriter, r *http.Request) {
 		TitleEN:          limit(r.FormValue("title_en"), 100),
 		IntroRU:          limit(r.FormValue("intro_ru"), 2000),
 		IntroEN:          limit(r.FormValue("intro_en"), 2000),
-		AddressUS:        limit(r.FormValue("address_us"), 1000),
-		AddressCA:        limit(r.FormValue("address_ca"), 1000),
+		AddrUS:           addressFromForm(r, "us"),
+		AddrCA:           addressFromForm(r, "ca"),
 		ShowReservations: r.FormValue("show_reservations") == "1",
 		ReserveDays:      days,
 	}

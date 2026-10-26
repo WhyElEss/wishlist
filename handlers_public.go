@@ -264,8 +264,10 @@ func (a *App) handleReserve(w http.ResponseWriter, r *http.Request) {
 }
 
 type regionView struct {
-	Code, Address string
-	Active        bool
+	Code    string
+	Fields  []addrField // filled fields only
+	CopyAll string
+	Active  bool
 }
 
 type reservationPage struct {
@@ -306,7 +308,17 @@ func (a *App) handleReservation(w http.ResponseWriter, r *http.Request) {
 		itemRegion = a.visitorRegion(r)
 	}
 	for _, code := range []string{"US", "CA"} {
-		p.Regions = append(p.Regions, regionView{Code: code, Address: settings.address(code), Active: code == itemRegion})
+		addr := settings.address(code)
+		rv := regionView{Code: code, Active: code == itemRegion}
+		if !addr.empty() {
+			for _, f := range addr.fields() {
+				if f.Value != "" {
+					rv.Fields = append(rv.Fields, f)
+				}
+			}
+			rv.CopyAll = addr.text()
+		}
+		p.Regions = append(p.Regions, rv)
 	}
 	p.base = a.base(r, lang, tr(lang, "res_title"))
 	p.Token = token

@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io/fs"
 	"os"
+	"strings"
 	"sync"
 	"time"
 )
@@ -31,8 +32,8 @@ type Settings struct {
 	TitleEN   string `json:"title_en"`
 	IntroRU   string `json:"intro_ru"`
 	IntroEN   string `json:"intro_en"`
-	AddressUS string `json:"address_us"`
-	AddressCA string `json:"address_ca"`
+	AddrUS    Address `json:"addr_us"`
+	AddrCA    Address `json:"addr_ca"`
 	// ShowReservations is the spoiler switch: off hides who reserved what from
 	// the admin panel and from the Telegram notifications.
 	ShowReservations bool `json:"show_reservations"`
@@ -53,11 +54,64 @@ func (s Settings) intro(lang string) string {
 	return s.IntroEN
 }
 
-func (s Settings) address(region string) string {
+func (s Settings) address(region string) Address {
 	if region == "US" {
-		return s.AddressUS
+		return s.AddrUS
 	}
-	return s.AddressCA
+	return s.AddrCA
+}
+
+// Address is a shipping address in the fields shop checkouts ask for.
+type Address struct {
+	Name       string `json:"name"`
+	Line1      string `json:"line1"`
+	Line2      string `json:"line2"`
+	City       string `json:"city"`
+	Province   string `json:"province"`
+	PostalCode string `json:"postal_code"`
+	Country    string `json:"country"`
+}
+
+type addrField struct {
+	Key, Value string
+}
+
+// fields lists the address in display order; key names the i18n label and
+// the form input suffix.
+func (a Address) fields() []addrField {
+	return []addrField{
+		{"name", a.Name}, {"line1", a.Line1}, {"line2", a.Line2},
+		{"city", a.City}, {"province", a.Province}, {"postal", a.PostalCode},
+		{"country", a.Country},
+	}
+}
+
+func (a Address) empty() bool {
+	for _, f := range a.fields() {
+		if f.Key != "country" && f.Value != "" {
+			return false
+		}
+	}
+	return true
+}
+
+// text is the whole address as it is written on a parcel.
+func (a Address) text() string {
+	city := a.City // "Sanborn, NY 14132"
+	if a.Province != "" {
+		if city != "" {
+			city += ", "
+		}
+		city += a.Province
+	}
+	city = strings.TrimSpace(city + " " + a.PostalCode)
+	var lines []string
+	for _, l := range []string{a.Name, a.Line1, a.Line2, city, a.Country} {
+		if l = strings.TrimSpace(l); l != "" {
+			lines = append(lines, l)
+		}
+	}
+	return strings.Join(lines, "\n")
 }
 
 type Reservation struct {
@@ -156,6 +210,8 @@ func defaultSettings() Settings {
 		TitleEN:     "My wishlist",
 		IntroRU:     "Здесь то, что я был бы рад получить. Выберите подарок и нажмите «Подарю это» — остальные увидят, что он уже занят, но не узнают кем.",
 		IntroEN:     "Here is what I would be happy to get. Pick a gift and press “I’ll gift this” — others will see it is taken, but not by whom.",
+		AddrUS:      Address{Country: "US"},
+		AddrCA:      Address{Country: "CA"},
 		ReserveDays: defaultReserveDays,
 	}
 }

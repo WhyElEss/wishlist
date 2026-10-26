@@ -158,10 +158,20 @@ func TestFlow(t *testing.T) {
 	// Settings: addresses.
 	resp, _ = admin.PostForm(srv.URL+"/admin/settings", url.Values{
 		"title_ru": {"Вишлист"}, "title_en": {"Wishlist"},
-		"address_us": {"US ADDRESS LINE"}, "address_ca": {"CA ADDRESS LINE"},
+		"us_name": {"Test Person"}, "us_line1": {"US ADDRESS LINE"}, "us_postal": {"14132"}, "us_country": {"US"},
+		"ca_name": {"Test Person"}, "ca_line1": {"CA ADDRESS LINE"}, "ca_city": {"Toronto"},
 		"reserve_days": {"14"},
 	})
 	resp.Body.Close()
+
+	app.store.view(func(d *Data) {
+		if d.Settings.AddrUS.PostalCode != "14132" || d.Settings.AddrCA.City != "Toronto" {
+			t.Errorf("addresses not saved: %+v %+v", d.Settings.AddrUS, d.Settings.AddrCA)
+		}
+	})
+	if z := app.store.usZip(); z != "14132" {
+		t.Errorf("amazon zip = %q", z)
+	}
 
 	// Add an item from the fake shop.
 	resp, _ = admin.PostForm(srv.URL+"/admin/items", url.Values{"url": {shop.URL + "/kettle"}})
@@ -235,7 +245,7 @@ func TestFlow(t *testing.T) {
 	// a non-regional host, visitor without CF-IPCountry).
 	resp, _ = winner.Get(srv.URL + "/r/" + token)
 	page = body(t, resp)
-	if !strings.Contains(page, "CA ADDRESS LINE") || !strings.Contains(page, `data-region-panel="US" hidden`) {
+	if !strings.Contains(page, `data-copy-value="CA ADDRESS LINE"`) || !strings.Contains(page, `data-region-panel="US" hidden`) {
 		t.Errorf("reservation page address selection wrong:\n%s", page)
 	}
 	// Visitors from the US get the US address preselected.
@@ -306,4 +316,16 @@ func TestSweepExpires(t *testing.T) {
 			t.Error("item not available after expiry")
 		}
 	})
+}
+
+func TestAddressText(t *testing.T) {
+	a := Address{Name: "Yurii Stanislavskyi", Line1: "STE E-6420 Inducon Drive W", Line2: "SHP162016",
+		City: "Sanborn", Province: "NY", PostalCode: "14132", Country: "US"}
+	want := "Yurii Stanislavskyi\nSTE E-6420 Inducon Drive W\nSHP162016\nSanborn, NY 14132\nUS"
+	if got := a.text(); got != want {
+		t.Errorf("text() = %q, want %q", got, want)
+	}
+	if (Address{Country: "CA"}).empty() != true || a.empty() {
+		t.Error("empty() wrong")
+	}
 }

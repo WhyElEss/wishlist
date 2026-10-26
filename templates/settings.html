@@ -10,9 +10,18 @@
     <label>Приветствие (EN)<textarea name="intro_en" rows="3">{{.Settings.IntroEN}}</textarea></label>
 
     <h2>Адреса доставки</h2>
-    <p class="hint">Гость видит адрес только после бронирования. Укажите всё, что нужно вписать в заказ: получателя, номер suite, телефон.</p>
-    <label>США (Shippsy)<textarea name="address_us" rows="5">{{.Settings.AddressUS}}</textarea></label>
-    <label>Канада<textarea name="address_ca" rows="5">{{.Settings.AddressCA}}</textarea></label>
+    <p class="hint">Гость видит адрес только после бронирования, в этих же полях, и может скопировать каждое по отдельности или всё сразу. Postal Code в адресе США — это ZIP, с ним сервер открывает amazon.com, чтобы видеть цены.</p>
+    {{range .Addresses}}
+    <fieldset class="addr-edit">
+      <legend>{{.Title}}</legend>
+      <div class="addr-grid">
+        {{$prefix := .Prefix}}
+        {{range .Fields}}
+        <label>{{t "en" (print "addr_" .Key)}}<input id="{{$prefix}}_{{.Key}}" name="{{$prefix}}_{{.Key}}" value="{{.Value}}" maxlength="200"></label>
+        {{end}}
+      </div>
+    </fieldset>
+    {{end}}
 
     <h2>Брони</h2>
     <label>Срок брони, дней<input type="number" name="reserve_days" min="1" max="90" value="{{.Settings.ReserveDays}}"></label>

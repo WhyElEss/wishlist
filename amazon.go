@@ -56,8 +56,7 @@ var (
 	reUSZip          = regexp.MustCompile(`\b(\d{5})(?:-\d{4})?\b`)
 )
 
-// usZip takes the last 5-digit group of the US address (US addresses end with
-// the ZIP code); 10001 when there is none.
+// usZip takes the 5-digit ZIP from the US postal code; 10001 when there is none.
 func usZip(address string) string {
 	m := reUSZip.FindAllStringSubmatch(address, -1)
 	if len(m) == 0 {
@@ -66,10 +65,10 @@ func usZip(address string) string {
 	return m[len(m)-1][1]
 }
 
-// usZip is the zip of the US shipping address in the settings.
+// usZip is the ZIP of the US shipping address in the settings.
 func (s *Store) usZip() string {
 	var addr string
-	s.view(func(d *Data) { addr = d.Settings.AddressUS })
+	s.view(func(d *Data) { addr = d.Settings.AddrUS.PostalCode })
 	return usZip(addr)
 }
 
