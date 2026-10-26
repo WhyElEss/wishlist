@@ -116,7 +116,7 @@ func (a *App) handleAdmin(w http.ResponseWriter, r *http.Request) {
 		for _, it := range d.Items {
 			row := adminRow{
 				ID: it.ID, Title: it.Title, Image: it.Image,
-				PriceText:  formatPrice(it.Price, it.Currency),
+				PriceText:  itemPrice(it, "ru"),
 				Site:       siteName(it.URL),
 				RegionText: regionText(it.Region),
 				StatusText: statusNames[it.Status],

@@ -34,6 +34,8 @@ type App struct {
 
 	// priceRefreshPause spaces out shop requests in the daily price check.
 	priceRefreshPause time.Duration
+
+	discogs *discogsAPI
 }
 
 func newApp(cfg Config) (*App, error) {
@@ -70,6 +72,8 @@ func newApp(cfg Config) (*App, error) {
 		amazon:       newAmazonUS("https://www.amazon.com", store.usZip),
 
 		priceRefreshPause: 5 * time.Second,
+
+		discogs: &discogsAPI{base: "https://api.discogs.com", client: client},
 	}, nil
 }
 

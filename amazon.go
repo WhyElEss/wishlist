@@ -225,6 +225,10 @@ func (a *App) fetchMeta(ctx context.Context, raw string) (Meta, error) {
 			return Meta{}, err
 		}
 		return amazonMeta(page, final, "CAD"), nil
+	case err == nil && isDiscogs(u):
+		if _, _, ok := discogsRef(u); ok {
+			return a.discogs.fetchMeta(ctx, u)
+		}
 	}
 	return fetchMeta(ctx, a.client, raw)
 }

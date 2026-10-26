@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"html/template"
 	"net/http"
+	"net/url"
 	"strconv"
 	"strings"
 	"time"
@@ -45,6 +46,7 @@ var messages = map[string]map[string]string{
 		"addr_postal":           "Почтовый индекс",
 		"addr_country":          "Страна",
 		"copy_all":              "Копировать всё",
+		"price_from":            "от",
 		"tap_to_copy":           "Нажмите на поле, чтобы скопировать его.",
 		"mark_purchased":        "Я купил(а)",
 		"purchased_done":        "Отмечено как купленное. Спасибо!",
@@ -98,6 +100,7 @@ var messages = map[string]map[string]string{
 		"addr_postal":           "Postal Code",
 		"addr_country":          "Country",
 		"copy_all":              "Copy All",
+		"price_from":            "from",
 		"tap_to_copy":           "Tap a field to copy it.",
 		"mark_purchased":        "I bought it",
 		"purchased_done":        "Marked as bought. Thank you!",
@@ -166,6 +169,19 @@ func formatPrice(price, currency string) string {
 		return sym + price
 	}
 	return strings.TrimSpace(price + " " + currency)
+}
+
+// itemPrice is the price as visitors see it. Discogs has no shop price, only
+// the cheapest marketplace offer, so it reads "from $8.00".
+func itemPrice(it *Item, lang string) string {
+	p := formatPrice(it.Price, it.Currency)
+	if p == "" {
+		return ""
+	}
+	if u, err := url.Parse(it.URL); err == nil && isDiscogs(u) {
+		return tr(lang, "price_from") + " " + p
+	}
+	return p
 }
 
 func itoa(n int) string { return strconv.Itoa(n) }

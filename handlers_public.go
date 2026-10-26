@@ -25,13 +25,13 @@ type cardView struct {
 	MineToken                                     string
 }
 
-func makeCard(it *Item, now time.Time) cardView {
+func makeCard(it *Item, now time.Time, lang string) cardView {
 	return cardView{
 		ID:        it.ID,
 		URL:       it.URL,
 		Title:     it.Title,
 		Image:     it.Image,
-		PriceText: formatPrice(it.Price, it.Currency),
+		PriceText: itemPrice(it, lang),
 		Site:      siteName(it.URL),
 		Notes:     it.Notes,
 		Priority:  it.Priority,
@@ -110,7 +110,7 @@ func (a *App) handleIndex(w http.ResponseWriter, r *http.Request) {
 			if it.Status != statusActive {
 				continue
 			}
-			c := makeCard(it, now)
+			c := makeCard(it, now, lang)
 			for _, res := range it.Reservations {
 				if res.live(now) && mine[res.Token] {
 					c.MineToken = res.Token
@@ -177,7 +177,7 @@ func (a *App) handleReserveForm(w http.ResponseWriter, r *http.Request) {
 	a.store.view(func(d *Data) {
 		days = d.Settings.ReserveDays
 		if it := d.item(r.PathValue("id")); it != nil && it.Status == statusActive {
-			card, found = makeCard(it, now), true
+			card, found = makeCard(it, now, lang), true
 		}
 	})
 	if !found {
@@ -295,7 +295,7 @@ func (a *App) handleReservation(w http.ResponseWriter, r *http.Request) {
 		}
 		found = true
 		settings = d.Settings
-		p.Card = makeCard(it, now)
+		p.Card = makeCard(it, now, lang)
 		p.ExpiresAt = res.ExpiresAt
 		p.Purchased = res.PurchasedAt != nil
 		itemRegion = it.Region
