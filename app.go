@@ -342,21 +342,30 @@ func (a *App) sweep(now time.Time) {
 
 func (a *App) sendReminder(rm reminder) {
 	link := a.cfg.BaseURL + "/r/" + rm.token
-	subject := tr(rm.lang, "mail_reminder_subject")
-	body := tf(rm.lang, "mail_reminder_body", rm.title, formatDate(rm.lang, rm.expires), link)
+	subject := tf(rm.lang, "mail_reminder_subject", rm.title)
+	body := tf(rm.lang, "mail_reminder_body", rm.title, a.siteHost(), formatDate(rm.lang, rm.expires), link)
 	if err := a.mail.send(rm.email, subject, body); err != nil {
 		log.Printf("reminder mail: %v", err)
 	}
 }
 
-// confirmationMail is the message a guest gets right after reserving.
-func (a *App) confirmationMail(lang, token, title string, expires time.Time) (subject, body string) {
-	link := a.cfg.BaseURL + "/r/" + token
-	return tr(lang, "mail_confirm_subject"), tf(lang, "mail_confirm_body", title, formatDate(lang, expires), link)
+// confirmationMail is the message a guest gets right after reserving; link
+// is the reservation page.
+func (a *App) confirmationMail(lang, link, title string, expires time.Time) (subject, body string) {
+	return tf(lang, "mail_confirm_subject", title),
+		tf(lang, "mail_confirm_body", title, a.siteHost(), formatDate(lang, expires), link)
+}
+
+// siteHost is the site's public name for mail text (wishlist.stanislavski.me).
+func (a *App) siteHost() string {
+	if u, err := url.Parse(a.cfg.BaseURL); err == nil && u.Host != "" {
+		return u.Host
+	}
+	return a.cfg.BaseURL
 }
 
 func (a *App) sendConfirmation(email, lang, token, title string, expires time.Time) {
-	subject, body := a.confirmationMail(lang, token, title, expires)
+	subject, body := a.confirmationMail(lang, a.cfg.BaseURL+"/r/"+token, title, expires)
 	if err := a.mail.send(email, subject, body); err != nil {
 		log.Printf("confirmation mail: %v", err)
 	}

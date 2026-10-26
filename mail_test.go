@@ -7,6 +7,7 @@ import (
 	"net/url"
 	"strings"
 	"testing"
+	"time"
 )
 
 // A server that offers no STARTTLS must never see the login.
@@ -102,5 +103,33 @@ func TestHeloName(t *testing.T) {
 	}
 	if got := heloName(Config{SMTPFrom: "Wishlist <wishlist@stanislavski.me>"}); got != "stanislavski.me" {
 		t.Errorf("from SMTP_FROM: %q", got)
+	}
+}
+
+func TestMailTexts(t *testing.T) {
+	_, app := newTestApp(t)
+	app.cfg.BaseURL = "https://wishlist.example"
+	exp := time.Date(2026, 11, 9, 12, 0, 0, 0, time.Local)
+	for _, lang := range []string{"ru", "en"} {
+		subj, body := app.confirmationMail(lang, "https://wishlist.example/r/tok", "Casio A140WE", exp)
+		date := formatDate(lang, exp)
+		for _, want := range []string{"Casio A140WE", "wishlist.example", date, "https://wishlist.example/r/tok"} {
+			if !strings.Contains(body, want) {
+				t.Errorf("%s confirmation lacks %q:\n%s", lang, want, body)
+			}
+		}
+		if !strings.Contains(subj, "Casio A140WE") || strings.Contains(subj+body, "%!") {
+			t.Errorf("%s confirmation subject/body broken: %q\n%s", lang, subj, body)
+		}
+		for _, alarm := range []string{"Важно", "Important"} {
+			if strings.Contains(body, alarm) {
+				t.Errorf("%s confirmation still says %q", lang, alarm)
+			}
+		}
+		rs := tf(lang, "mail_reminder_subject", "Casio A140WE")
+		rb := tf(lang, "mail_reminder_body", "Casio A140WE", app.siteHost(), date, "https://wishlist.example/r/tok")
+		if strings.Contains(rs+rb, "%!") || !strings.Contains(rb, date) || !strings.Contains(rb, "https://wishlist.example/r/tok") {
+			t.Errorf("%s reminder broken: %q\n%s", lang, rs, rb)
+		}
 	}
 }
