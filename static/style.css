@@ -214,3 +214,5 @@ table.items.save-failed { outline: 2px solid var(--danger); }
 .ship-rules h3 { margin: 0 0 6px; font-size: 1rem; }
 .ship-rules ul { margin: 0; padding-left: 1.2em; display: grid; gap: 6px; }
 .ship-note { font-weight: 700; color: var(--text); }
+.email-field { font-size: 1.05rem; }
+.email-field input { font-size: 1.05rem; padding: 12px 14px; }

@@ -274,6 +274,7 @@ type reservationPage struct {
 	SelfURL   string
 	ExpiresAt time.Time
 	Purchased bool
+	Emailed   bool
 	Regions   []regionView
 
 	// FixedRegion: the item allows a single address, so there is no switch.
@@ -298,6 +299,7 @@ func (a *App) handleReservation(w http.ResponseWriter, r *http.Request) {
 		p.Card = makeCard(it, now, lang)
 		p.ExpiresAt = res.ExpiresAt
 		p.Purchased = res.PurchasedAt != nil
+		p.Emailed = res.Email != ""
 		itemRegion = it.Region
 	})
 	if !found {

@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"net/mail"
 	"net/url"
 	"os"
 	"path/filepath"
@@ -20,6 +21,7 @@ var adminMessages = map[string]string{
 	"refreshed": "Данные с сайта обновлены.",
 	"released":  "Брони сняты.",
 	"tg_ok":     "Тестовое сообщение отправлено в Telegram.",
+	"mail_ok":   "Тестовое письмо отправлено на адрес отправителя. Проверьте этот ящик в iCloud.",
 	"bad_url":   "Нужна ссылка вида https://…",
 }
 
@@ -491,6 +493,7 @@ type settingsPage struct {
 	Addresses       []addressForm
 	TelegramEnabled bool
 	MailEnabled     bool
+	MailFrom        string
 	BaseURL         string
 }
 
@@ -504,6 +507,10 @@ func (a *App) handleSettingsForm(w http.ResponseWriter, r *http.Request) {
 	if e := r.URL.Query().Get("tgerr"); e != "" {
 		p.Error = "Telegram: " + e
 	}
+	if e := r.URL.Query().Get("mailerr"); e != "" {
+		p.Error = "Почта: " + e
+	}
+	p.MailFrom = a.cfg.SMTPFrom
 	a.store.view(func(d *Data) { p.Settings = d.Settings })
 	p.Addresses = []addressForm{
 		{Prefix: "us", Title: "США (Shippsy)", Fields: p.Settings.AddrUS.fields()},
@@ -563,4 +570,23 @@ func (a *App) handleTelegramTest(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	redirectMsg(w, r, "/admin/settings", "tg_ok")
+}
+
+// handleMailTest sends one message to the sender's own address: it proves the
+// SMTP login, encryption and sending address in one go.
+func (a *App) handleMailTest(w http.ResponseWriter, r *http.Request) {
+	if !a.mail.enabled() {
+		http.Redirect(w, r, "/admin/settings?mailerr="+url.QueryEscape("SMTP_HOST или SMTP_FROM не заданы"), http.StatusSeeOther)
+		return
+	}
+	from, err := mail.ParseAddress(a.cfg.SMTPFrom)
+	if err == nil {
+		err = a.mail.send(from.Address, "Wishlist: тестовое письмо", "Это тестовое письмо вишлиста. Если вы его читаете, отправка работает.\n\n"+a.cfg.BaseURL+"\n")
+	}
+	if err != nil {
+		log.Printf("mail test: %v", err)
+		http.Redirect(w, r, "/admin/settings?mailerr="+url.QueryEscape(err.Error()), http.StatusSeeOther)
+		return
+	}
+	redirectMsg(w, r, "/admin/settings", "mail_ok")
 }

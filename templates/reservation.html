@@ -47,6 +47,7 @@
   {{end}}
 
   <div class="savelink">
+    {{if .Emailed}}<p><strong>{{t .Lang "res_link_emailed"}}</strong></p>{{end}}
     <p>{{t .Lang "res_save_link"}}</p>
     <div class="linkbox">
       <code id="reslink">{{.SelfURL}}</code>

@@ -34,7 +34,8 @@
   <h2>Уведомления</h2>
   <p>Telegram: {{if .TelegramEnabled}}настроен.{{else}}не настроен (TELEGRAM_BOT_TOKEN и TELEGRAM_CHAT_ID в .env).{{end}}</p>
   {{if .TelegramEnabled}}<form method="post" action="/admin/settings/telegram-test"><button class="btn">Отправить тестовое сообщение</button></form>{{end}}
-  <p>Email-напоминания гостям: {{if .MailEnabled}}включены.{{else}}выключены (SMTP_* в .env). Поле email у гостей скрыто.{{end}}</p>
+  <p>Письма гостям: {{if .MailEnabled}}включены, отправитель {{.MailFrom}}.{{else}}выключены (SMTP_* в .env). Поле email у гостей скрыто.{{end}}</p>
+  {{if .MailEnabled}}<form method="post" action="/admin/settings/mail-test"><button class="btn">Отправить тестовое письмо</button></form>{{end}}
   <p class="hint">BASE_URL: {{if .BaseURL}}{{.BaseURL}}{{else}}не задан{{end}}</p>
 </section>
 {{end}}

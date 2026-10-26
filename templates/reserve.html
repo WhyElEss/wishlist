@@ -24,8 +24,8 @@
   </div>
   <form method="post" action="/item/{{.Card.ID}}/reserve" class="form">
     {{if .EmailEnabled}}
-      <label>{{t .Lang "email_label"}}
-        <input type="email" name="email" autocomplete="email" maxlength="254">
+      <label class="email-field">{{t .Lang "email_label"}}
+        <input type="email" name="email" autocomplete="email" maxlength="254" placeholder="name@example.com">
       </label>
       <small class="hint">{{t .Lang "email_hint"}}</small>
     {{end}}

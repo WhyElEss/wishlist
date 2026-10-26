@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"crypto/tls"
 	"errors"
 	"fmt"
 	"io"
@@ -71,7 +72,8 @@ type mailer struct {
 
 func (m *mailer) enabled() bool { return m.host != "" && m.from != "" }
 
-// send uses SMTP with STARTTLS when the server offers it (port 587).
+// send submits one message over SMTP with STARTTLS (port 587). It refuses
+// to authenticate on a connection the server did not encrypt.
 func (m *mailer) send(to, subject, body string) error {
 	if !m.enabled() {
 		return nil
@@ -84,17 +86,54 @@ func (m *mailer) send(to, subject, body string) error {
 	if err != nil {
 		return err
 	}
-	var auth smtp.Auth
-	if m.user != "" {
-		auth = smtp.PlainAuth("", m.user, m.pass, m.host)
-	}
+	_, domain, _ := strings.Cut(from.Address, "@")
 	msg := "From: " + from.String() + "\r\n" +
 		"To: " + rcpt.Address + "\r\n" +
 		"Subject: " + mime.QEncoding.Encode("utf-8", subject) + "\r\n" +
 		"Date: " + time.Now().Format(time.RFC1123Z) + "\r\n" +
+		"Message-ID: <" + randomString(18) + "@" + domain + ">\r\n" +
 		"MIME-Version: 1.0\r\n" +
 		"Content-Type: text/plain; charset=utf-8\r\n" +
 		"Content-Transfer-Encoding: 8bit\r\n\r\n" +
 		strings.ReplaceAll(body, "\n", "\r\n")
-	return smtp.SendMail(net.JoinHostPort(m.host, m.port), auth, from.Address, []string{rcpt.Address}, []byte(msg))
+
+	conn, err := net.DialTimeout("tcp", net.JoinHostPort(m.host, m.port), 20*time.Second)
+	if err != nil {
+		return err
+	}
+	conn.SetDeadline(time.Now().Add(60 * time.Second))
+	c, err := smtp.NewClient(conn, m.host)
+	if err != nil {
+		conn.Close()
+		return err
+	}
+	defer c.Close()
+	if ok, _ := c.Extension("STARTTLS"); !ok {
+		return errors.New("SMTP server does not offer STARTTLS")
+	}
+	if err := c.StartTLS(&tls.Config{ServerName: m.host}); err != nil {
+		return err
+	}
+	if m.user != "" {
+		if err := c.Auth(smtp.PlainAuth("", m.user, m.pass, m.host)); err != nil {
+			return err
+		}
+	}
+	if err := c.Mail(from.Address); err != nil {
+		return err
+	}
+	if err := c.Rcpt(rcpt.Address); err != nil {
+		return err
+	}
+	w, err := c.Data()
+	if err != nil {
+		return err
+	}
+	if _, err := w.Write([]byte(msg)); err != nil {
+		return err
+	}
+	if err := w.Close(); err != nil {
+		return err
+	}
+	return c.Quit()
 }

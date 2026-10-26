@@ -117,6 +117,7 @@ func (a *App) routes() http.Handler {
 	mux.HandleFunc("GET /admin/settings", a.requireAdmin(a.handleSettingsForm))
 	mux.HandleFunc("POST /admin/settings", a.requireAdmin(a.handleSettings))
 	mux.HandleFunc("POST /admin/settings/telegram-test", a.requireAdmin(a.handleTelegramTest))
+	mux.HandleFunc("POST /admin/settings/mail-test", a.requireAdmin(a.handleMailTest))
 
 	return a.secure(mux)
 }
