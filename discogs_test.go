@@ -10,7 +10,7 @@ import (
 
 func TestDiscogsRef(t *testing.T) {
 	for raw, want := range map[string]string{
-		"https://www.discogs.com/master/239695-Various-The-Casablanca-Records-Story": "master 239695",
+		"https://www.discogs.com/master/239695-Various-The-Casablanca-Records-Story":  "master 239695",
 		"https://www.discogs.com/release/201415-Various-The-Casablanca-Records-Story": "release 201415",
 		"https://www.discogs.com/fr/release/201415":                                   "release 201415",
 		"https://www.discogs.com/sell/item/123456":                                    "",
