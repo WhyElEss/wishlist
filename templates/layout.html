@@ -1,0 +1,35 @@
+{{define "layout"}}<!doctype html>
+<html lang="{{.Lang}}">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>{{.PageTitle}}</title>
+<link rel="icon" href="/static/icon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/static/style.css?v={{.Version}}">
+<script src="/static/app.js?v={{.Version}}" defer></script>
+</head>
+<body{{if .Admin}} class="admin"{{end}}>
+<header class="top">
+  <div class="wrap">
+    <a class="brand" href="{{if .Admin}}/admin{{else}}/{{end}}">🎁 {{.SiteTitle}}</a>
+    {{if not .NoNav}}<nav>
+      {{if .Admin}}
+        <a href="/admin">Подарки</a>
+        <a href="/admin/settings">Настройки</a>
+        <a href="/" target="_blank">Сайт ↗</a>
+        <form method="post" action="/admin/logout" class="inline"><button class="link">Выйти</button></form>
+      {{else}}
+        <a href="/lang/{{if eq .Lang "ru"}}en{{else}}ru{{end}}?next={{.Path}}">{{t .Lang "lang_switch"}}</a>
+      {{end}}
+    </nav>{{end}}
+  </div>
+</header>
+<main class="wrap">
+  {{if .Flash}}<div class="flash ok">{{.Flash}}</div>{{end}}
+  {{if .Error}}<div class="flash error">{{.Error}}</div>{{end}}
+  {{template "content" .}}
+</main>
+</body>
+</html>
+{{end}}

@@ -1,0 +1,11 @@
+# secrets and runtime data — never commit
+.env
+*.env
+!.env.example
+data/
+wishlist
+# tooling
+.DS_Store
+.claude/
+CLAUDE.md
+CLAUDE.local.md

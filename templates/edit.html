@@ -1,0 +1,51 @@
+{{define "content"}}
+<a class="back" href="/admin">← Все подарки</a>
+{{if .Item.FetchNote}}<div class="flash warn">{{.Item.FetchNote}}</div>{{end}}
+<section class="panel edit">
+  <div class="preview">
+    {{if .Item.Image}}<img src="/img/{{.Item.Image}}" alt="">{{else}}<span class="noimg">🎁</span>{{end}}
+  </div>
+  <form method="post" action="/admin/items/{{.Item.ID}}" class="form">
+    <label>Ссылка на товар<input type="url" name="url" value="{{.Item.URL}}" required></label>
+    <label>Название<input name="title" value="{{.Item.Title}}" maxlength="300"></label>
+    <label>Картинка (URL)
+      <input type="url" name="image_src" value="{{.Item.ImageSrc}}">
+      <small class="hint">Если поменять ссылку, картинка скачается заново. Пустое поле убирает картинку.</small>
+    </label>
+    <div class="row">
+      <label>Цена<input name="price" value="{{.Item.Price}}" inputmode="decimal" maxlength="32"></label>
+      <label>Валюта<input name="currency" value="{{.Item.Currency}}" maxlength="3" placeholder="USD"></label>
+      <label>Количество<input type="number" name="quantity" min="1" max="99" value="{{.Item.Quantity}}"></label>
+    </div>
+    <div class="row">
+      <label>Куда доставлять
+        <select name="region">
+          <option value=""{{if eq .Item.Region ""}} selected{{end}}>Авто: США для посетителей из США, иначе Канада</option>
+          <option value="US"{{if eq .Item.Region "US"}} selected{{end}}>США</option>
+          <option value="CA"{{if eq .Item.Region "CA"}} selected{{end}}>Канада</option>
+        </select>
+      </label>
+      <label>Статус
+        <select name="status">
+          <option value="active"{{if eq .Item.Status "active"}} selected{{end}}>Активен: виден гостям</option>
+          <option value="received"{{if eq .Item.Status "received"}} selected{{end}}>Получен: в архив</option>
+          <option value="owned"{{if eq .Item.Status "owned"}} selected{{end}}>Уже есть: скрыть</option>
+        </select>
+      </label>
+    </div>
+    <label>Заметка для дарителей
+      <textarea name="notes" rows="3" maxlength="1000">{{.Item.Notes}}</textarea>
+      <small class="hint">Размер, цвет, «любой из вариантов», «можно б/у»…</small>
+    </label>
+    <label class="check"><input type="checkbox" name="priority" value="1"{{if .Item.Priority}} checked{{end}}> ★ Очень хочу</label>
+    <button class="btn primary">Сохранить</button>
+  </form>
+</section>
+<div class="actions">
+  <form method="post" action="/admin/items/{{.Item.ID}}/refresh"><button class="btn">Обновить цену и картинку с сайта</button></form>
+  {{if and .ShowReservations .Reservations}}
+  <form method="post" action="/admin/items/{{.Item.ID}}/release" data-confirm="Снять все брони с этого подарка? Дарители об этом не узнают."><button class="btn">Снять брони ({{.Reservations}})</button></form>
+  {{end}}
+  <form method="post" action="/admin/items/{{.Item.ID}}/delete" data-confirm="Удалить подарок из списка?"><button class="btn danger">Удалить</button></form>
+</div>
+{{end}}

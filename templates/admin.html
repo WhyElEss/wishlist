@@ -1,0 +1,32 @@
+{{define "content"}}
+<form method="post" action="/admin/items" class="addform">
+  <input type="url" name="url" placeholder="Ссылка на товар: Amazon, eBay, любой магазин" required>
+  <button class="btn primary">Добавить</button>
+</form>
+<p class="hint">
+  {{if .ShowReservations}}Брони видны: режим со спойлерами.{{else}}Режим без спойлеров: брони скрыты здесь и в Telegram. Переключается в настройках.{{end}}
+</p>
+<div class="tablewrap">
+<table class="items">
+  <thead><tr>
+    <th></th><th>Товар</th><th>Цена</th><th>Адрес</th><th>Шт.</th><th>Статус</th>
+    {{if .ShowReservations}}<th>Брони</th>{{end}}
+  </tr></thead>
+  <tbody>
+  {{range .Rows}}
+    <tr class="status-{{.Status}}">
+      <td>{{if .Image}}<img class="mini" src="/img/{{.Image}}" alt="">{{end}}</td>
+      <td>{{if .Priority}}★ {{end}}<a href="/admin/items/{{.ID}}">{{.Title}}</a><div class="site">{{.Site}}</div></td>
+      <td>{{.PriceText}}</td>
+      <td>{{.RegionText}}</td>
+      <td>{{.Quantity}}</td>
+      <td>{{.StatusText}}</td>
+      {{if $.ShowReservations}}<td>{{.ReservedText}}</td>{{end}}
+    </tr>
+  {{else}}
+    <tr><td colspan="7" class="empty">Пока пусто: вставьте первую ссылку выше.</td></tr>
+  {{end}}
+  </tbody>
+</table>
+</div>
+{{end}}

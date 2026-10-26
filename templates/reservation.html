@@ -1,0 +1,50 @@
+{{define "content"}}
+<a class="back" href="/">{{t .Lang "back"}}</a>
+<section class="panel">
+  {{if not .Purchased}}<h1>{{t .Lang "res_title"}}</h1>{{end}}
+  <div class="itemhead">
+    {{if .Card.Image}}<img src="/img/{{.Card.Image}}" alt="">{{end}}
+    <div>
+      <h2>{{.Card.Title}}</h2>
+      <div class="meta">
+        {{if .Card.PriceText}}<span class="price">{{.Card.PriceText}}</span>{{end}}
+        <span class="site">{{.Card.Site}}</span>
+      </div>
+      {{if .Card.Notes}}<p class="notes">{{.Card.Notes}}</p>{{end}}
+      <a class="btn primary" href="{{.Card.URL}}" target="_blank" rel="noopener noreferrer">{{t .Lang "go_store"}} ↗</a>
+    </div>
+  </div>
+
+  <h2>{{t .Lang "res_ship_to"}}</h2>
+  <p class="hint">{{t .Lang "res_ship_hint"}}</p>
+  <div class="tabs" role="tablist">
+    {{range .Regions}}<button type="button" class="tab{{if .Active}} active{{end}}" data-region="{{.Code}}">{{region $.Lang .Code}}</button>{{end}}
+  </div>
+  {{range .Regions}}
+  <div class="address" data-region-panel="{{.Code}}"{{if not .Active}} hidden{{end}}>
+    {{if .Address}}
+      <pre id="addr-{{.Code}}">{{.Address}}</pre>
+      <button type="button" class="btn small" data-copy="addr-{{.Code}}" data-copied="{{t $.Lang "copied"}}">{{t $.Lang "copy"}}</button>
+    {{else}}
+      <p>{{t $.Lang "no_address"}}</p>
+    {{end}}
+  </div>
+  {{end}}
+
+  <div class="savelink">
+    <p>{{t .Lang "res_save_link"}}</p>
+    <div class="linkbox">
+      <code id="reslink">{{.SelfURL}}</code>
+      <button type="button" class="btn small" data-copy="reslink" data-copied="{{t .Lang "copied"}}">{{t .Lang "copy"}}</button>
+    </div>
+    {{if not .Purchased}}<p class="hint">{{tf .Lang "res_expires" (date .Lang .ExpiresAt)}}</p>{{end}}
+  </div>
+
+  <div class="actions">
+    {{if not .Purchased}}
+    <form method="post" action="/r/{{.Token}}/purchased"><button class="btn primary">{{t .Lang "mark_purchased"}}</button></form>
+    {{end}}
+    <form method="post" action="/r/{{.Token}}/cancel" data-confirm="{{t .Lang "confirm_cancel"}}"><button class="btn danger">{{t .Lang "cancel"}}</button></form>
+  </div>
+</section>
+{{end}}

@@ -1,0 +1,27 @@
+{{define "content"}}
+<a class="back" href="/">{{t .Lang "back"}}</a>
+<section class="panel">
+  <div class="itemhead">
+    {{if .Card.Image}}<img src="/img/{{.Card.Image}}" alt="">{{end}}
+    <div>
+      <h1>{{.Card.Title}}</h1>
+      <div class="meta">
+        {{if .Card.PriceText}}<span class="price">{{.Card.PriceText}}</span>{{end}}
+        <a class="site" href="{{.Card.URL}}" target="_blank" rel="noopener noreferrer">{{.Card.Site}} ↗</a>
+      </div>
+      {{if .Card.Notes}}<p class="notes">{{.Card.Notes}}</p>{{end}}
+    </div>
+  </div>
+  <h2>{{t .Lang "reserve_title"}}</h2>
+  <p>{{tf .Lang "reserve_explain" .Days}}</p>
+  <form method="post" action="/item/{{.Card.ID}}/reserve" class="form">
+    {{if .EmailEnabled}}
+      <label>{{t .Lang "email_label"}}
+        <input type="email" name="email" autocomplete="email" maxlength="254">
+      </label>
+      <small class="hint">{{t .Lang "email_hint"}}</small>
+    {{end}}
+    <button class="btn primary big">{{t .Lang "reserve_confirm"}}</button>
+  </form>
+</section>
+{{end}}

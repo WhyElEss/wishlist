@@ -1,0 +1,39 @@
+# Lives on the host next to .env. The image is built straight from GitHub:
+#   docker compose build --no-cache && docker compose up -d
+name: wishlist
+
+services:
+  wishlist:
+    build:
+      context: https://github.com/WhyElEss/wishlist.git#main
+    image: wishlist:local
+    container_name: wishlist
+    restart: unless-stopped
+    # format: raw — the password hash and tokens are read literally, never
+    # interpolated by compose.
+    env_file:
+      - path: .env
+        format: raw
+    ports:
+      - "${HOST_PORT:-8095}:8095"
+    volumes:
+      # wishlist.json (items, reservations, settings incl. addresses),
+      # session.key and downloaded images.
+      - data:/data
+    networks:
+      - net
+    security_opt:
+      - no-new-privileges:true
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+volumes:
+  data:
+    name: wishlist_data
+
+networks:
+  net:
+    name: wishlist_net

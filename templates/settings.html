@@ -1,0 +1,31 @@
+{{define "content"}}
+<section class="panel">
+  <h1>Настройки</h1>
+  <form method="post" action="/admin/settings" class="form">
+    <div class="row">
+      <label>Заголовок (RU)<input name="title_ru" value="{{.Settings.TitleRU}}" maxlength="100"></label>
+      <label>Заголовок (EN)<input name="title_en" value="{{.Settings.TitleEN}}" maxlength="100"></label>
+    </div>
+    <label>Приветствие (RU)<textarea name="intro_ru" rows="3">{{.Settings.IntroRU}}</textarea></label>
+    <label>Приветствие (EN)<textarea name="intro_en" rows="3">{{.Settings.IntroEN}}</textarea></label>
+
+    <h2>Адреса доставки</h2>
+    <p class="hint">Гость видит адрес только после бронирования. Укажите всё, что нужно вписать в заказ: получателя, номер suite, телефон.</p>
+    <label>США (Shippsy)<textarea name="address_us" rows="5">{{.Settings.AddressUS}}</textarea></label>
+    <label>Канада<textarea name="address_ca" rows="5">{{.Settings.AddressCA}}</textarea></label>
+
+    <h2>Брони</h2>
+    <label>Срок брони, дней<input type="number" name="reserve_days" min="1" max="90" value="{{.Settings.ReserveDays}}"></label>
+    <label class="check"><input type="checkbox" name="show_reservations" value="1"{{if .Settings.ShowReservations}} checked{{end}}> Показывать, что забронировано (спойлеры) в админке и в Telegram</label>
+    <button class="btn primary">Сохранить</button>
+  </form>
+</section>
+
+<section class="panel">
+  <h2>Уведомления</h2>
+  <p>Telegram: {{if .TelegramEnabled}}настроен.{{else}}не настроен (TELEGRAM_BOT_TOKEN и TELEGRAM_CHAT_ID в .env).{{end}}</p>
+  {{if .TelegramEnabled}}<form method="post" action="/admin/settings/telegram-test"><button class="btn">Отправить тестовое сообщение</button></form>{{end}}
+  <p>Email-напоминания гостям: {{if .MailEnabled}}включены.{{else}}выключены (SMTP_* в .env). Поле email у гостей скрыто.{{end}}</p>
+  <p class="hint">BASE_URL: {{if .BaseURL}}{{.BaseURL}}{{else}}не задан{{end}}</p>
+</section>
+{{end}}
