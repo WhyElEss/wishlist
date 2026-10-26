@@ -225,19 +225,24 @@ type base struct {
 	Admin     bool
 	NoNav     bool // login page
 
-	// For link previews (Open Graph): public origin and the site's intro.
+	// For link previews (Open Graph), always in English: public origin, the
+	// English site title (or the page's own, e.g. a gift's name) and intro.
 	Origin      string
+	OGTitle     string
 	Description string
 }
 
 func (a *App) base(r *http.Request, lang, pageTitle string) base {
-	var site, intro string
-	a.store.view(func(d *Data) { site, intro = d.Settings.title(lang), d.Settings.intro(lang) })
+	var site, siteEN, introEN string
+	a.store.view(func(d *Data) {
+		site, siteEN, introEN = d.Settings.title(lang), d.Settings.TitleEN, d.Settings.IntroEN
+	})
+	ogTitle := pageTitle
 	if pageTitle == "" {
-		pageTitle = site
+		pageTitle, ogTitle = site, siteEN
 	}
 	return base{Lang: lang, PageTitle: pageTitle, SiteTitle: site, Path: r.URL.Path, Version: version,
-		Origin: a.origin(r), Description: intro}
+		Origin: a.origin(r), OGTitle: ogTitle, Description: introEN}
 }
 
 func (a *App) render(w http.ResponseWriter, status int, name string, data any) {

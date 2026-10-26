@@ -490,6 +490,16 @@ func TestIconsAndLinkPreview(t *testing.T) {
 		}
 	}
 
+	// Previews stay English even for a Russian-language request.
+	req, _ := http.NewRequest(http.MethodGet, srv.URL+"/", nil)
+	req.Header.Set("Accept-Language", "ru-RU,ru;q=0.9")
+	resp, _ = http.DefaultClient.Do(req)
+	page = body(t, resp)
+	if !strings.Contains(page, `<title>Мой вишлист</title>`) || !strings.Contains(page, `<meta property="og:title" content="My wishlist">`) ||
+		!strings.Contains(page, `<meta property="og:locale" content="en_US">`) {
+		t.Error("Russian request: page should be Russian, preview tags English")
+	}
+
 	resp, _ = http.Get(srv.URL + "/robots.txt")
 	robots := body(t, resp)
 	if !strings.Contains(robots, "User-agent: Twitterbot") || !strings.Contains(robots, "User-agent: *\nDisallow: /\n") {

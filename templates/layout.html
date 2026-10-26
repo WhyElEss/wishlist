@@ -12,18 +12,18 @@
 {{if not .Admin}}
 <meta name="description" content="{{.Description}}">
 <meta property="og:type" content="website">
-<meta property="og:site_name" content="{{.SiteTitle}}">
-<meta property="og:title" content="{{.PageTitle}}">
+<meta property="og:site_name" content="{{.OGTitle}}">
+<meta property="og:title" content="{{.OGTitle}}">
 <meta property="og:description" content="{{.Description}}">
 <meta property="og:url" content="{{.Origin}}/">
-<meta property="og:locale" content="{{if eq .Lang "ru"}}ru_RU{{else}}en_US{{end}}">
+<meta property="og:locale" content="en_US">
 <meta property="og:image" content="{{.Origin}}/static/og.png?v={{.Version}}">
 <meta property="og:image:type" content="image/png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
-<meta property="og:image:alt" content="{{.SiteTitle}}">
+<meta property="og:image:alt" content="{{.OGTitle}}">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="{{.PageTitle}}">
+<meta name="twitter:title" content="{{.OGTitle}}">
 <meta name="twitter:description" content="{{.Description}}">
 <meta name="twitter:image" content="{{.Origin}}/static/og.png?v={{.Version}}">
 {{end}}
