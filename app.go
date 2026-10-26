@@ -93,6 +93,7 @@ func (a *App) routes() http.Handler {
 	mux.HandleFunc("POST /admin/logout", a.handleLogout)
 	mux.HandleFunc("GET /admin", a.requireAdmin(a.handleAdmin))
 	mux.HandleFunc("POST /admin/items", a.requireAdmin(a.handleAdd))
+	mux.HandleFunc("POST /admin/order", a.requireAdmin(a.handleOrder))
 	mux.HandleFunc("GET /admin/items/{id}", a.requireAdmin(a.handleEditForm))
 	mux.HandleFunc("POST /admin/items/{id}", a.requireAdmin(a.handleEdit))
 	mux.HandleFunc("POST /admin/items/{id}/refresh", a.requireAdmin(a.handleRefresh))

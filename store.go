@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io/fs"
 	"os"
+	"slices"
 	"strings"
 	"sync"
 	"time"
@@ -178,7 +179,35 @@ func (it *Item) available(now time.Time) bool {
 
 type Data struct {
 	Settings Settings `json:"settings"`
-	Items    []*Item  `json:"items"`
+	// Items are in the order the admin arranged them, top first.
+	Items []*Item `json:"items"`
+	// ManualOrder marks files written since Items became the display order;
+	// older files kept them oldest first and are reversed once on load.
+	ManualOrder bool `json:"manual_order"`
+}
+
+// reorder puts the items with the given IDs first, in that order; items not
+// listed keep their relative order after them.
+func (d *Data) reorder(ids []string) {
+	pos := make(map[string]int, len(ids))
+	for i, id := range ids {
+		if _, dup := pos[id]; !dup {
+			pos[id] = i
+		}
+	}
+	slices.SortStableFunc(d.Items, func(a, b *Item) int {
+		pa, oka := pos[a.ID]
+		pb, okb := pos[b.ID]
+		switch {
+		case oka && okb:
+			return pa - pb
+		case oka:
+			return -1
+		case okb:
+			return 1
+		}
+		return 0
+	})
 }
 
 func (d *Data) item(id string) *Item {
@@ -229,7 +258,7 @@ func openStore(path string) (*Store, error) {
 	s := &Store{path: path}
 	b, err := os.ReadFile(path)
 	if errors.Is(err, fs.ErrNotExist) {
-		s.data = Data{Settings: defaultSettings()}
+		s.data = Data{Settings: defaultSettings(), ManualOrder: true}
 		return s, s.saveLocked()
 	}
 	if err != nil {
@@ -240,6 +269,13 @@ func openStore(path string) (*Store, error) {
 	}
 	if s.data.Settings.ReserveDays <= 0 {
 		s.data.Settings.ReserveDays = defaultReserveDays
+	}
+	if !s.data.ManualOrder {
+		slices.Reverse(s.data.Items) // newest first, as the admin list showed them
+		s.data.ManualOrder = true
+		if err := s.saveLocked(); err != nil {
+			return nil, err
+		}
 	}
 	return s, nil
 }

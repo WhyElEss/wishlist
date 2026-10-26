@@ -113,8 +113,7 @@ func (a *App) handleAdmin(w http.ResponseWriter, r *http.Request) {
 	now := time.Now()
 	a.store.view(func(d *Data) {
 		p.ShowReservations = d.Settings.ShowReservations
-		for i := len(d.Items) - 1; i >= 0; i-- { // newest first
-			it := d.Items[i]
+		for _, it := range d.Items {
 			row := adminRow{
 				ID: it.ID, Title: it.Title, Image: it.Image,
 				PriceText:  formatPrice(it.Price, it.Currency),
@@ -135,6 +134,24 @@ func (a *App) handleAdmin(w http.ResponseWriter, r *http.Request) {
 		}
 	})
 	a.render(w, http.StatusOK, "admin", p)
+}
+
+// handleOrder saves the order the admin dragged the rows into.
+func (a *App) handleOrder(w http.ResponseWriter, r *http.Request) {
+	ids := strings.Split(r.FormValue("ids"), ",")
+	if len(ids) == 0 || len(ids) > 1000 {
+		http.Error(w, "bad ids", http.StatusBadRequest)
+		return
+	}
+	if err := a.store.update(func(d *Data) error {
+		d.reorder(ids)
+		return nil
+	}); err != nil {
+		log.Printf("order: %v", err)
+		http.Error(w, "save failed", http.StatusInternalServerError)
+		return
+	}
+	w.WriteHeader(http.StatusNoContent)
 }
 
 // ---- add / edit ----
@@ -215,7 +232,7 @@ func (a *App) handleAdd(w http.ResponseWriter, r *http.Request) {
 		it.Image = name
 	}
 	if err := a.store.update(func(d *Data) error {
-		d.Items = append(d.Items, it)
+		d.Items = append([]*Item{it}, d.Items...) // new items go on top
 		return nil
 	}); err != nil {
 		log.Printf("add: %v", err)

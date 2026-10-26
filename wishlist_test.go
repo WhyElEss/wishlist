@@ -8,6 +8,7 @@ import (
 	"net/http/cookiejar"
 	"net/http/httptest"
 	"net/url"
+	"os"
 	"strings"
 	"sync"
 	"testing"
@@ -327,5 +328,84 @@ func TestAddressText(t *testing.T) {
 	}
 	if (Address{Country: "CA"}).empty() != true || a.empty() {
 		t.Error("empty() wrong")
+	}
+}
+
+func itemIDs(d *Data) string {
+	var ids []string
+	for _, it := range d.Items {
+		ids = append(ids, it.ID)
+	}
+	return strings.Join(ids, ",")
+}
+
+func TestReorder(t *testing.T) {
+	d := &Data{Items: []*Item{{ID: "a"}, {ID: "b"}, {ID: "c"}, {ID: "d"}}}
+	d.reorder([]string{"c", "a", "zzz", "c"})
+	if got := itemIDs(d); got != "c,a,b,d" {
+		t.Errorf("reorder = %s, want c,a,b,d", got)
+	}
+}
+
+func TestOldFileIsReversedOnce(t *testing.T) {
+	path := t.TempDir() + "/wishlist.json"
+	old := `{"settings":{"reserve_days":14},"items":[{"id":"old"},{"id":"mid"},{"id":"new"}]}`
+	if err := os.WriteFile(path, []byte(old), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	for i := 0; i < 2; i++ { // the second open must not reverse again
+		s, err := openStore(path)
+		if err != nil {
+			t.Fatal(err)
+		}
+		s.view(func(d *Data) {
+			if got := itemIDs(d); got != "new,mid,old" {
+				t.Errorf("open %d: order = %s, want new,mid,old", i, got)
+			}
+		})
+	}
+}
+
+func TestOrderEndpoint(t *testing.T) {
+	srv, app := newTestApp(t)
+	app.store.update(func(d *Data) error {
+		for _, id := range []string{"a", "b", "c"} {
+			d.Items = append(d.Items, &Item{ID: id, Title: id, Quantity: 1, Status: statusActive})
+		}
+		return nil
+	})
+	post := func(cookie string) int {
+		req, _ := http.NewRequest(http.MethodPost, srv.URL+"/admin/order", strings.NewReader("ids=c,a,b"))
+		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+		if cookie != "" {
+			req.Header.Set("Cookie", adminCookie+"="+cookie)
+		}
+		resp, err := (&http.Client{CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }}).Do(req)
+		if err != nil {
+			t.Fatal(err)
+		}
+		resp.Body.Close()
+		return resp.StatusCode
+	}
+	if code := post(""); code != http.StatusSeeOther {
+		t.Errorf("without session: %d, want redirect to login", code)
+	}
+	app.store.view(func(d *Data) {
+		if got := itemIDs(d); got != "a,b,c" {
+			t.Errorf("order changed without session: %s", got)
+		}
+	})
+	if code := post(app.signSession(time.Now().Add(time.Hour))); code != http.StatusNoContent {
+		t.Errorf("with session: %d", code)
+	}
+	app.store.view(func(d *Data) {
+		if got := itemIDs(d); got != "c,a,b" {
+			t.Errorf("order = %s, want c,a,b", got)
+		}
+	})
+	resp, _ := http.Get(srv.URL + "/")
+	page := body(t, resp)
+	if ic, ia := strings.Index(page, "/item/c"), strings.Index(page, "/item/a"); ic < 0 || ia < 0 || ic > ia {
+		t.Error("public list does not follow the admin order")
 	}
 }

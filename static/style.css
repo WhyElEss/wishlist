@@ -181,3 +181,18 @@ table.items tr.status-received, table.items tr.status-owned { opacity: .5; }
   .panel { padding: 18px; }
   .grid { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 12px; }
 }
+
+/* Admin list reordering. */
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+table.items td.handle-cell { width: 1%; padding-right: 0; }
+.drag {
+  font: inherit; font-size: 1.1rem; line-height: 1; letter-spacing: -0.15em;
+  color: var(--muted); background: none; border: 0; border-radius: 6px;
+  padding: 10px 8px; cursor: grab; touch-action: none; user-select: none;
+}
+.drag:hover { color: var(--text); background: var(--bg); }
+.drag:focus-visible { outline: 2px solid var(--accent); }
+table.items tr.dragging { position: relative; z-index: 1; background: var(--bg); box-shadow: 0 6px 20px rgb(0 0 0 / .25); }
+table.items tr.dragging .drag { cursor: grabbing; color: var(--accent); }
+table.items.saving { opacity: .85; }
+table.items.save-failed { outline: 2px solid var(--danger); }

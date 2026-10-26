@@ -4,17 +4,19 @@
   <button class="btn primary">Добавить</button>
 </form>
 <p class="hint">
+  Гости видят подарки в том же порядке, что здесь. Чтобы поменять порядок, перетащите строку за ⋮⋮. Забронированные подарки у гостей уходят в конец.<br>
   {{if .ShowReservations}}Брони видны: режим со спойлерами.{{else}}Режим без спойлеров: брони скрыты здесь и в Telegram. Переключается в настройках.{{end}}
 </p>
 <div class="tablewrap">
-<table class="items">
+<table class="items" data-sortable="/admin/order">
   <thead><tr>
-    <th></th><th>Товар</th><th>Цена</th><th>Адрес</th><th>Шт.</th><th>Статус</th>
+    <th><span class="sr-only">Порядок</span></th><th></th><th>Товар</th><th>Цена</th><th>Адрес</th><th>Шт.</th><th>Статус</th>
     {{if .ShowReservations}}<th>Брони</th>{{end}}
   </tr></thead>
   <tbody>
   {{range .Rows}}
-    <tr class="status-{{.Status}}">
+    <tr class="status-{{.Status}}" data-id="{{.ID}}">
+      <td class="handle-cell"><button type="button" class="drag" title="Перетащите, чтобы поменять порядок (или стрелки ↑↓)" aria-label="Переместить: {{.Title}}">⋮⋮</button></td>
       <td>{{if .Image}}<img class="mini" src="/img/{{.Image}}" alt="">{{end}}</td>
       <td>{{if .Priority}}★ {{end}}<a href="/admin/items/{{.ID}}">{{.Title}}</a><div class="site">{{.Site}}</div></td>
       <td>{{.PriceText}}</td>
@@ -24,7 +26,7 @@
       {{if $.ShowReservations}}<td>{{.ReservedText}}</td>{{end}}
     </tr>
   {{else}}
-    <tr><td colspan="7" class="empty">Пока пусто: вставьте первую ссылку выше.</td></tr>
+    <tr><td colspan="8" class="empty">Пока пусто: вставьте первую ссылку выше.</td></tr>
   {{end}}
   </tbody>
 </table>

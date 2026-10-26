@@ -23,7 +23,6 @@ type cardView struct {
 	Quantity, Left                                int
 	Available                                     bool
 	MineToken                                     string
-	created                                       time.Time
 }
 
 func makeCard(it *Item, now time.Time) cardView {
@@ -39,7 +38,6 @@ func makeCard(it *Item, now time.Time) cardView {
 		Quantity:  it.Quantity,
 		Left:      it.left(now),
 		Available: it.available(now),
-		created:   it.CreatedAt,
 	}
 }
 
@@ -121,14 +119,9 @@ func (a *App) handleIndex(w http.ResponseWriter, r *http.Request) {
 			cards = append(cards, c)
 		}
 	})
+	// The admin's order, with gifts nobody can take any more at the end.
 	sort.SliceStable(cards, func(i, j int) bool {
-		if cards[i].Available != cards[j].Available {
-			return cards[i].Available
-		}
-		if cards[i].Priority != cards[j].Priority {
-			return cards[i].Priority > cards[j].Priority
-		}
-		return cards[i].created.After(cards[j].created)
+		return cards[i].Available && !cards[j].Available
 	})
 	p := indexPage{base: a.base(r, lang, ""), Intro: intro, Cards: cards}
 	if r.URL.Query().Get("m") == "cancelled" {
