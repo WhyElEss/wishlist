@@ -21,7 +21,6 @@ var adminMessages = map[string]string{
 	"refreshed": "Данные с сайта обновлены.",
 	"released":  "Брони сняты.",
 	"tg_ok":     "Тестовое сообщение отправлено в Telegram.",
-	"mail_ok":   "Тестовое письмо отправлено на адрес отправителя. Проверьте этот ящик в iCloud.",
 	"bad_url":   "Нужна ссылка вида https://…",
 }
 
@@ -510,6 +509,9 @@ func (a *App) handleSettingsForm(w http.ResponseWriter, r *http.Request) {
 	if e := r.URL.Query().Get("mailerr"); e != "" {
 		p.Error = "Почта: " + e
 	}
+	if to := r.URL.Query().Get("mailok"); to != "" {
+		p.Flash = "Сервер " + a.cfg.SMTPHost + " принял тестовое письмо для " + to + ". Проверьте этот ящик, в том числе папку «Спам»."
+	}
 	p.MailFrom = a.cfg.SMTPFrom
 	a.store.view(func(d *Data) { p.Settings = d.Settings })
 	p.Addresses = []addressForm{
@@ -579,14 +581,17 @@ func (a *App) handleMailTest(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/admin/settings?mailerr="+url.QueryEscape("SMTP_HOST или SMTP_FROM не заданы"), http.StatusSeeOther)
 		return
 	}
-	from, err := mail.ParseAddress(a.cfg.SMTPFrom)
-	if err == nil {
-		err = a.mail.send(from.Address, "Wishlist: тестовое письмо", "Это тестовое письмо вишлиста. Если вы его читаете, отправка работает.\n\n"+a.cfg.BaseURL+"\n")
-	}
+	to, err := mail.ParseAddress(strings.TrimSpace(r.FormValue("to")))
 	if err != nil {
-		log.Printf("mail test: %v", err)
+		http.Redirect(w, r, "/admin/settings?mailerr="+url.QueryEscape("адрес получателя не похож на email"), http.StatusSeeOther)
+		return
+	}
+	err = a.mail.send(to.Address, "Wishlist: тестовое письмо", "Это тестовое письмо вишлиста. Если вы его читаете, отправка работает.\n\n"+a.cfg.BaseURL+"\n")
+	if err != nil {
+		log.Printf("mail test to %s: %v", to.Address, err)
 		http.Redirect(w, r, "/admin/settings?mailerr="+url.QueryEscape(err.Error()), http.StatusSeeOther)
 		return
 	}
-	redirectMsg(w, r, "/admin/settings", "mail_ok")
+	log.Printf("mail test to %s: accepted by %s", to.Address, a.cfg.SMTPHost)
+	http.Redirect(w, r, "/admin/settings?mailok="+url.QueryEscape(to.Address), http.StatusSeeOther)
 }

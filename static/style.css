@@ -216,3 +216,5 @@ table.items.save-failed { outline: 2px solid var(--danger); }
 .ship-note { font-weight: 700; color: var(--text); }
 .email-field { font-size: 1.05rem; }
 .email-field input { font-size: 1.05rem; padding: 12px 14px; }
+.testmail { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-bottom: 12px; }
+.testmail input { flex: 1; min-width: 220px; }

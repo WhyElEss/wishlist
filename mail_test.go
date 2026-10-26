@@ -78,7 +78,16 @@ func TestMailUI(t *testing.T) {
 	admin := newClient(t)
 	admin.PostForm(srv.URL+"/admin/login", url.Values{"password": {"admin-password"}})
 	resp, _ = admin.Get(srv.URL + "/admin/settings")
-	if page := body(t, resp); !strings.Contains(page, `action="/admin/settings/mail-test"`) {
-		t.Error("settings lack the test-mail button")
+	if page := body(t, resp); !strings.Contains(page, `action="/admin/settings/mail-test"`) || !strings.Contains(page, `name="to"`) {
+		t.Error("settings lack the test-mail form with a recipient field")
+	}
+	// Nothing listens on the configured port: the error must name the problem, not claim success.
+	resp, _ = admin.PostForm(srv.URL+"/admin/settings/mail-test", url.Values{"to": {"me@example.com"}})
+	if page := body(t, resp); !strings.Contains(page, "Почта: ") || strings.Contains(page, "принял тестовое письмо") {
+		t.Error("failed test mail not reported as a failure")
+	}
+	resp, _ = admin.PostForm(srv.URL+"/admin/settings/mail-test", url.Values{"to": {"not an address"}})
+	if page := body(t, resp); !strings.Contains(page, "адрес получателя не похож на email") {
+		t.Error("bad recipient not reported")
 	}
 }
