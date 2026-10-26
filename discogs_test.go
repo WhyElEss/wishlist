@@ -15,6 +15,7 @@ func TestDiscogsRef(t *testing.T) {
 		"https://www.discogs.com/fr/release/201415":                                   "release 201415",
 		"https://www.discogs.com/sell/item/123456":                                    "listing 123456",
 		"https://www.discogs.com/shop/item/3170084632":                                "listing 3170084632",
+		"https://www.discogs.com/sell/release/21433207":                               "release 21433207",
 		"https://www.discogs.com/artist/1-Someone":                                    "",
 	} {
 		u, _ := url.Parse(raw)
@@ -78,6 +79,17 @@ func TestDiscogsFetch(t *testing.T) {
 	}
 	if m.Title != "Donna Summer – Love To Love You Baby" || m.Image != "https://i.example/3.jpg" || m.Price != "8.50" || m.Currency != "USD" {
 		t.Errorf("release: %+v", m)
+	}
+
+	m, err = app.fetchMeta(context.Background(), "https://www.discogs.com/sell/release/201415")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if m.Title != "Donna Summer – Love To Love You Baby" || m.Price != "8.50" || m.Currency != "USD" {
+		t.Errorf("sell/release: %+v", m)
+	}
+	if got := itemPrice(&Item{URL: "https://www.discogs.com/sell/release/201415", Price: "8.50", Currency: "USD"}, "en"); got != "from $8.50" {
+		t.Errorf("sell/release price = %q, want a from-price", got)
 	}
 
 	m, err = app.fetchMeta(context.Background(), "https://www.discogs.com/shop/item/3170084632")

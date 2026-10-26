@@ -33,10 +33,11 @@ func isDiscogs(u *url.URL) bool {
 	return host == "discogs.com" || host == "www.discogs.com"
 }
 
-// /master/239695-Various-..., /release/201415-..., /shop/item/3170084632 or
-// /sell/item/3170084632 (a listing), optionally after a language prefix such
-// as /fr/.
-var reDiscogsPath = regexp.MustCompile(`^/(?:[a-z]{2}(?:-[a-z]{2})?/)?(master|release|shop/item|sell/item)/(\d+)(?:[-/]|$)`)
+// /master/239695-Various-..., /release/201415-..., /sell/release/21433207
+// (all offers for a release, read as the release), /shop/item/3170084632 or
+// /sell/item/3170084632 (a single listing), optionally after a language
+// prefix such as /fr/.
+var reDiscogsPath = regexp.MustCompile(`^/(?:[a-z]{2}(?:-[a-z]{2})?/)?(master|release|sell/release|shop/item|sell/item)/(\d+)(?:[-/]|$)`)
 
 // discogsRef returns kind "master", "release" or "listing" and the ID.
 func discogsRef(u *url.URL) (kind, id string, ok bool) {
@@ -44,8 +45,11 @@ func discogsRef(u *url.URL) (kind, id string, ok bool) {
 	if m == nil {
 		return "", "", false
 	}
-	if strings.HasSuffix(m[1], "/item") {
+	switch m[1] {
+	case "shop/item", "sell/item":
 		return "listing", m[2], true
+	case "sell/release":
+		return "release", m[2], true
 	}
 	return m[1], m[2], true
 }
