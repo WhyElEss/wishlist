@@ -100,28 +100,36 @@ func fetchMeta(ctx context.Context, c *http.Client, raw string) (Meta, error) {
 }
 
 func fetchMetaUA(ctx context.Context, c *http.Client, raw, ua string) (Meta, error) {
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, raw, nil)
+	page, final, err := fetchPage(ctx, c, raw, ua)
 	if err != nil {
 		return Meta{}, err
+	}
+	m := parseMeta(page, final)
+	m.FinalURL = final
+	return m, nil
+}
+
+func fetchPage(ctx context.Context, c *http.Client, raw, ua string) (string, *url.URL, error) {
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, raw, nil)
+	if err != nil {
+		return "", nil, err
 	}
 	req.Header.Set("User-Agent", ua)
 	req.Header.Set("Accept", "text/html,application/xhtml+xml;q=0.9,*/*;q=0.8")
 	req.Header.Set("Accept-Language", "en-US,en;q=0.9")
 	resp, err := c.Do(req)
 	if err != nil {
-		return Meta{}, err
+		return "", nil, err
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode >= 400 {
-		return Meta{}, fmt.Errorf("HTTP %d", resp.StatusCode)
+		return "", nil, fmt.Errorf("HTTP %d", resp.StatusCode)
 	}
 	body, err := io.ReadAll(io.LimitReader(resp.Body, maxPageBytes))
 	if err != nil {
-		return Meta{}, err
+		return "", nil, err
 	}
-	m := parseMeta(string(body), resp.Request.URL)
-	m.FinalURL = resp.Request.URL
-	return m, nil
+	return string(body), resp.Request.URL, nil
 }
 
 var (

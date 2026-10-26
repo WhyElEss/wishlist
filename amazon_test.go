@@ -82,3 +82,16 @@ func TestAmazonUSSetsZip(t *testing.T) {
 		t.Errorf("address dialog opened %d times, want 1 (zip should stick to the session)", n)
 	}
 }
+
+func TestAmazonMetaCA(t *testing.T) {
+	page := `<html><head><title>Amazon.ca: Kindle Paperwhite 16GB</title></head><body>
+<span id="productTitle" class="a-size-large"> Amazon Kindle Paperwhite 16GB (2024 model) – 7&#34; display </span>
+<img alt="" src="https://m.media-amazon.com/images/I/s.jpg" data-old-hires="https://m.media-amazon.com/images/I/b._AC_SL1500_.jpg" id="landingImage">
+<input type="hidden" id="twister-plus-price-data-price" value="279.99" />
+<input type="hidden" id="twister-plus-price-data-price-unit" value="$" /></body></html>`
+	m := amazonMeta(page, nil, "CAD")
+	if m.Title != `Amazon Kindle Paperwhite 16GB (2024 model) – 7" display` || m.Price != "279.99" || m.Currency != "CAD" ||
+		m.Image != "https://m.media-amazon.com/images/I/b._AC_SL1500_.jpg" {
+		t.Errorf("got %+v", m)
+	}
+}

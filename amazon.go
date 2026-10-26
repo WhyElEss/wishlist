@@ -167,6 +167,16 @@ func (az *amazonUS) fetchMeta(ctx context.Context, raw string) (Meta, error) {
 			}
 		}
 	}
+	m := amazonMeta(page, final, "USD")
+	if zipErr != nil {
+		log.Printf("%v", zipErr)
+	}
+	return m, nil
+}
+
+// amazonMeta reads an Amazon product page. The page shows the price as a
+// number plus a unit ("$"), which is the shop's own currency.
+func amazonMeta(page string, final *url.URL, currency string) Meta {
 	m := parseMeta(page, final)
 	m.FinalURL = final
 	// <title> reads "Amazon.com: <name>"; the product title element has the name alone.
@@ -187,20 +197,35 @@ func (az *amazonUS) fetchMeta(ctx context.Context, raw string) (Meta, error) {
 		if p := reAmazonPrice.FindStringSubmatch(page); p != nil {
 			m.Price = p[1]
 			if u := reAmazonUnit.FindStringSubmatch(page); u != nil && u[1] == "$" {
-				m.Currency = "USD"
+				m.Currency = currency
 			}
 		}
 	}
-	if zipErr != nil {
-		log.Printf("%v", zipErr)
-	}
-	return m, nil
+	return m
 }
 
-// fetchMeta picks the fetcher for the shop.
+func isAmazonCA(u *url.URL) bool {
+	if u == nil {
+		return false
+	}
+	host := strings.ToLower(u.Hostname())
+	return host == "amazon.ca" || host == "www.amazon.ca"
+}
+
+// fetchMeta picks the fetcher for the shop. amazon.ca product pages need no
+// delivery-location change from Canada; they are read with the browser UA
+// only, since the crawler UA gets HTTP 500 there.
 func (a *App) fetchMeta(ctx context.Context, raw string) (Meta, error) {
-	if u, err := url.Parse(raw); err == nil && isAmazonUS(u) {
+	u, err := url.Parse(raw)
+	switch {
+	case err == nil && isAmazonUS(u):
 		return a.amazon.fetchMeta(ctx, raw)
+	case err == nil && isAmazonCA(u):
+		page, final, err := fetchPage(ctx, a.client, raw, browserUA)
+		if err != nil {
+			return Meta{}, err
+		}
+		return amazonMeta(page, final, "CAD"), nil
 	}
 	return fetchMeta(ctx, a.client, raw)
 }
