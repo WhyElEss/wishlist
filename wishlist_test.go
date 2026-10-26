@@ -506,3 +506,14 @@ func TestIconsAndLinkPreview(t *testing.T) {
 		t.Errorf("robots.txt:\n%s", robots)
 	}
 }
+
+// The ★ frame was once dropped by mistake; keep it pinned.
+func TestHotCardFrame(t *testing.T) {
+	css, err := assets.ReadFile("static/style.css")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(string(css), ".card.hot { border-color: var(--hot); box-shadow: 0 0 0 1px var(--hot); }") {
+		t.Error("style.css lost the red frame for ★ cards")
+	}
+}
