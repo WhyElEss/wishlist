@@ -510,7 +510,7 @@ func (a *App) handleSettingsForm(w http.ResponseWriter, r *http.Request) {
 		p.Error = "Почта: " + e
 	}
 	if to := r.URL.Query().Get("mailok"); to != "" {
-		p.Flash = "Сервер " + a.cfg.SMTPHost + " принял тестовое письмо для " + to + ". Проверьте этот ящик, в том числе папку «Спам»."
+		p.Flash = "Сервер " + a.cfg.SMTPHost + " принял тестовое письмо для " + to + ". Это то же письмо, что гость получает после брони, с примером подарка (ссылка в нём ведёт на несуществующую бронь). Проверьте ящик, в том числе папку «Спам»."
 	}
 	p.MailFrom = a.cfg.SMTPFrom
 	a.store.view(func(d *Data) { p.Settings = d.Settings })
@@ -586,7 +586,11 @@ func (a *App) handleMailTest(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/admin/settings?mailerr="+url.QueryEscape("адрес получателя не похож на email"), http.StatusSeeOther)
 		return
 	}
-	err = a.mail.send(to.Address, "Wishlist: тестовое письмо", "Это тестовое письмо вишлиста. Если вы его читаете, отправка работает.\n\n"+a.cfg.BaseURL+"\n")
+	// The test is the real reservation email, so it meets the same spam filters.
+	var days int
+	a.store.view(func(d *Data) { days = d.Settings.ReserveDays })
+	subject, body := a.confirmationMail("ru", "example", "Пример подарка", time.Now().AddDate(0, 0, days))
+	err = a.mail.send(to.Address, subject, body)
 	if err != nil {
 		log.Printf("mail test to %s: %v", to.Address, err)
 		http.Redirect(w, r, "/admin/settings?mailerr="+url.QueryEscape(err.Error()), http.StatusSeeOther)

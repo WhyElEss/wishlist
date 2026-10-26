@@ -68,7 +68,7 @@ func newApp(cfg Config) (*App, error) {
 		reserveLimit: newLimiter(5, time.Hour),
 		loginLimit:   newLimiter(5, 15*time.Minute),
 		tg:           &telegram{token: cfg.TelegramToken, chat: cfg.TelegramChat, client: client},
-		mail:         &mailer{host: cfg.SMTPHost, port: cfg.SMTPPort, user: cfg.SMTPUser, pass: cfg.SMTPPass, from: cfg.SMTPFrom},
+		mail:         &mailer{host: cfg.SMTPHost, port: cfg.SMTPPort, user: cfg.SMTPUser, pass: cfg.SMTPPass, from: cfg.SMTPFrom, helo: heloName(cfg)},
 		amazon:       newAmazonUS("https://www.amazon.com", store.usZip),
 
 		priceRefreshPause: 5 * time.Second,
@@ -349,10 +349,14 @@ func (a *App) sendReminder(rm reminder) {
 	}
 }
 
-func (a *App) sendConfirmation(email, lang, token, title string, expires time.Time) {
+// confirmationMail is the message a guest gets right after reserving.
+func (a *App) confirmationMail(lang, token, title string, expires time.Time) (subject, body string) {
 	link := a.cfg.BaseURL + "/r/" + token
-	subject := tr(lang, "mail_confirm_subject")
-	body := tf(lang, "mail_confirm_body", title, formatDate(lang, expires), link)
+	return tr(lang, "mail_confirm_subject"), tf(lang, "mail_confirm_body", title, formatDate(lang, expires), link)
+}
+
+func (a *App) sendConfirmation(email, lang, token, title string, expires time.Time) {
+	subject, body := a.confirmationMail(lang, token, title, expires)
 	if err := a.mail.send(email, subject, body); err != nil {
 		log.Printf("confirmation mail: %v", err)
 	}

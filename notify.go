@@ -66,8 +66,10 @@ func (t *telegram) redact(err error) error {
 	return errors.New(strings.ReplaceAll(err.Error(), t.token, "***"))
 }
 
+// helo is the name given to the SMTP server in EHLO; without it Go says
+// "localhost", which shows up in the Received header spam filters read.
 type mailer struct {
-	host, port, user, pass, from string
+	host, port, user, pass, from, helo string
 }
 
 func (m *mailer) enabled() bool { return m.host != "" && m.from != "" }
@@ -108,6 +110,11 @@ func (m *mailer) send(to, subject, body string) error {
 		return err
 	}
 	defer c.Close()
+	if m.helo != "" {
+		if err := c.Hello(m.helo); err != nil {
+			return err
+		}
+	}
 	if ok, _ := c.Extension("STARTTLS"); !ok {
 		return errors.New("SMTP server does not offer STARTTLS")
 	}
@@ -136,4 +143,18 @@ func (m *mailer) send(to, subject, body string) error {
 		return err
 	}
 	return c.Quit()
+}
+
+// heloName is the public host name of the site (wishlist.stanislavski.me), or
+// the sender's domain when BASE_URL is not set.
+func heloName(cfg Config) string {
+	if u, err := url.Parse(cfg.BaseURL); err == nil && u.Hostname() != "" {
+		return u.Hostname()
+	}
+	if a, err := mail.ParseAddress(cfg.SMTPFrom); err == nil {
+		if _, domain, ok := strings.Cut(a.Address, "@"); ok {
+			return domain
+		}
+	}
+	return ""
 }

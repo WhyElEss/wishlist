@@ -44,13 +44,17 @@ func TestMailRefusesPlaintextAuth(t *testing.T) {
 		got <- strings.Join(seen, "|")
 	}()
 	host, port, _ := net.SplitHostPort(ln.Addr().String())
-	m := &mailer{host: host, port: port, user: "me@icloud.com", pass: "secret-app-password", from: "Wishlist <wishlist@example.com>"}
+	m := &mailer{host: host, port: port, user: "me@icloud.com", pass: "secret-app-password", from: "Wishlist <wishlist@example.com>", helo: "wishlist.example.com"}
 	err = m.send("guest@example.com", "s", "b")
 	if err == nil || !strings.Contains(err.Error(), "STARTTLS") {
 		t.Fatalf("send without STARTTLS: err = %v", err)
 	}
-	if seen := <-got; strings.Contains(seen, "AUTH") {
+	seen := <-got
+	if strings.Contains(seen, "AUTH") {
 		t.Errorf("credentials sent without encryption: %s", seen)
+	}
+	if !strings.HasPrefix(seen, "EHLO wishlist.example.com|") {
+		t.Errorf("client did not introduce itself by the site name: %s", seen)
 	}
 }
 
@@ -89,5 +93,14 @@ func TestMailUI(t *testing.T) {
 	resp, _ = admin.PostForm(srv.URL+"/admin/settings/mail-test", url.Values{"to": {"not an address"}})
 	if page := body(t, resp); !strings.Contains(page, "адрес получателя не похож на email") {
 		t.Error("bad recipient not reported")
+	}
+}
+
+func TestHeloName(t *testing.T) {
+	if got := heloName(Config{BaseURL: "https://wishlist.stanislavski.me", SMTPFrom: "W <w@other.example>"}); got != "wishlist.stanislavski.me" {
+		t.Errorf("from BASE_URL: %q", got)
+	}
+	if got := heloName(Config{SMTPFrom: "Wishlist <wishlist@stanislavski.me>"}); got != "stanislavski.me" {
+		t.Errorf("from SMTP_FROM: %q", got)
 	}
 }
