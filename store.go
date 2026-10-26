@@ -148,8 +148,10 @@ type Item struct {
 	Quantity     int            `json:"quantity"`
 	Status       string         `json:"status"`
 	FetchNote    string         `json:"fetch_note,omitempty"`
+
 	// PriceCheckedAt is when a price was last read from the shop's page.
 	PriceCheckedAt *time.Time `json:"price_checked_at,omitempty"`
+
 	Reservations []*Reservation `json:"reservations,omitempty"`
 	CreatedAt    time.Time      `json:"created_at"`
 	UpdatedAt    time.Time      `json:"updated_at"`
