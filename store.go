@@ -151,6 +151,9 @@ type Item struct {
 
 	// PriceCheckedAt is when a price was last read from the shop's page.
 	PriceCheckedAt *time.Time `json:"price_checked_at,omitempty"`
+	// Unavailable: on the last read the shop did not sell the item; the last
+	// known price is kept but not shown.
+	Unavailable bool `json:"unavailable,omitempty"`
 
 	Reservations []*Reservation `json:"reservations,omitempty"`
 	CreatedAt    time.Time      `json:"created_at"`

@@ -56,7 +56,7 @@ func (a *App) refreshPrices(ctx context.Context) {
 	})
 
 	start := time.Now()
-	var changed, unchanged, failed int
+	var changed, unchanged, unavailable, failed int
 	for i, tg := range targets {
 		if i > 0 {
 			select {
@@ -66,10 +66,27 @@ func (a *App) refreshPrices(ctx context.Context) {
 			}
 		}
 		fctx, cancel := context.WithTimeout(ctx, 60*time.Second)
-		meta, err := a.fetchMeta(fctx, tg.url)
+		meta, err := a.readShop(fctx, tg.url)
 		cancel()
-		if err != nil || meta.Price == "" {
+		if err != nil {
 			failed++
+			continue
+		}
+		if meta.Price == "" {
+			if meta.Unavailable {
+				a.store.update(func(d *Data) error {
+					it := d.item(tg.id)
+					if it == nil || it.Unavailable {
+						return errNoChange
+					}
+					log.Printf("price %s: now unavailable in the shop (%s)", siteName(it.URL), it.Title)
+					it.Unavailable = true
+					return nil
+				})
+				unavailable++
+			} else {
+				failed++
+			}
 			continue
 		}
 		now := time.Now()
@@ -85,6 +102,10 @@ func (a *App) refreshPrices(ctx context.Context) {
 				it.Price, it.Currency = meta.Price, meta.Currency
 				changed++
 			}
+			if it.Unavailable {
+				log.Printf("price %s: back in the shop at %s (%s)", siteName(it.URL), formatPrice(meta.Price, meta.Currency), it.Title)
+				it.Unavailable = false
+			}
 			it.PriceCheckedAt = &now
 			return nil
 		})
@@ -93,6 +114,6 @@ func (a *App) refreshPrices(ctx context.Context) {
 		d.PricesCheckedAt = time.Now()
 		return nil
 	})
-	log.Printf("price check: %d gifts, %d changed, %d unchanged, %d without a price from the shop, %s",
-		len(targets), changed, unchanged, failed, time.Since(start).Round(time.Second))
+	log.Printf("price check: %d gifts, %d changed, %d unchanged, %d unavailable in the shop, %d without a price from the shop, %s",
+		len(targets), changed, unchanged, unavailable, failed, time.Since(start).Round(time.Second))
 }

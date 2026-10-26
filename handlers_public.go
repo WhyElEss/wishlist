@@ -21,7 +21,7 @@ type cardView struct {
 	ID, URL, Title, Image, PriceText, Site, Notes string
 	Priority                                      int
 	Quantity, Left                                int
-	Available                                     bool
+	Available, Unavailable                        bool
 	MineToken                                     string
 }
 
@@ -38,6 +38,8 @@ func makeCard(it *Item, now time.Time, lang string) cardView {
 		Quantity:  it.Quantity,
 		Left:      it.left(now),
 		Available: it.available(now),
+
+		Unavailable: it.Unavailable,
 	}
 }
 

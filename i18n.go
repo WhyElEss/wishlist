@@ -48,6 +48,7 @@ var messages = map[string]map[string]string{
 		"addr_country":          "Страна",
 		"copy_all":              "Копировать всё",
 		"price_from":            "от",
+		"shop_unavailable":      "Временно недоступен в магазине",
 		"ship_rules_title":      "Как доставить подарок",
 		"ship_rule_own":         "Если собираетесь вручить лично, закажите подарок на свой адрес.",
 		"ship_rule_remote":      "Если дарите на расстоянии, отправьте его на мой адрес: из магазина в США — на мой адрес в США, из магазина в любой другой стране — на мой адрес в Канаде. Адрес появится на следующем шаге.",
@@ -107,6 +108,7 @@ var messages = map[string]map[string]string{
 		"addr_country":          "Country",
 		"copy_all":              "Copy All",
 		"price_from":            "from",
+		"shop_unavailable":      "Temporarily unavailable in store",
 		"ship_rules_title":      "How to get the gift to me",
 		"ship_rule_own":         "If you plan to hand it over in person, order it to your own address.",
 		"ship_rule_remote":      "If you are gifting from afar, ship it to my address: from a US store to my US address, from a store in any other country to my Canadian address. You will see the address on the next step.",
@@ -185,6 +187,9 @@ func formatPrice(price, currency string) string {
 // no shop price, only the cheapest marketplace offer, so it reads "from
 // $8.00"; a single listing has a fixed price.
 func itemPrice(it *Item, lang string) string {
+	if it.Unavailable {
+		return tr(lang, "shop_unavailable")
+	}
 	p := formatPrice(it.Price, it.Currency)
 	if p == "" {
 		return ""

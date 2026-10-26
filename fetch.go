@@ -35,11 +35,16 @@ type Meta struct {
 	Price    string
 	Currency string
 	FinalURL *url.URL
+	// Unavailable: the shop page says it does not sell the item right now.
+	Unavailable bool
 }
 
 func (m Meta) complete() bool { return m.Title != "" && m.Image != "" && m.Price != "" }
 
 func (m Meta) missing() []string {
+	if m.Unavailable {
+		m.Price = "-" // no price is expected while the shop does not sell it
+	}
 	var out []string
 	if m.Title == "" {
 		out = append(out, "название")

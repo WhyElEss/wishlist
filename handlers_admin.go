@@ -169,10 +169,14 @@ func fetchNote(m Meta, err error) string {
 	if err != nil {
 		return "Не удалось прочитать страницу магазина (" + err.Error() + "). Заполните поля вручную."
 	}
-	if miss := m.missing(); len(miss) > 0 {
-		return "Со страницы не удалось взять: " + strings.Join(miss, ", ") + ". Допишите вручную."
+	var notes []string
+	if m.Unavailable {
+		notes = append(notes, "Магазин сейчас не продаёт этот товар: гости видят «Временно недоступен в магазине». Утренняя проверка в 6:00 подставит цену, когда товар появится.")
 	}
-	return ""
+	if miss := m.missing(); len(miss) > 0 {
+		notes = append(notes, "Со страницы не удалось взять: "+strings.Join(miss, ", ")+". Допишите вручную.")
+	}
+	return strings.Join(notes, " ")
 }
 
 // saveImage downloads src into the images dir and returns the new file name.
@@ -223,6 +227,7 @@ func (a *App) handleAdd(w http.ResponseWriter, r *http.Request) {
 	if meta.Price != "" {
 		it.PriceCheckedAt = &now
 	}
+	it.Unavailable = meta.Unavailable
 	if it.Title == "" {
 		it.Title = siteName(u.String())
 	}
@@ -418,6 +423,9 @@ func (a *App) handleRefresh(w http.ResponseWriter, r *http.Request) {
 			it.Price, it.Currency = meta.Price, meta.Currency
 			now := time.Now()
 			it.PriceCheckedAt = &now
+		}
+		if ferr == nil {
+			it.Unavailable = meta.Unavailable
 		}
 		if newImage != "" {
 			oldImage = it.Image

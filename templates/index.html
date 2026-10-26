@@ -13,7 +13,7 @@
       {{if .Priority}}<span class="badge hot">★ {{t $.Lang "priority_high"}}</span>{{end}}
       <h2>{{if $href}}<a class="card-link" href="{{$href}}">{{.Title}}</a>{{else}}{{.Title}}{{end}}</h2>
       <div class="meta">
-        {{if .PriceText}}<span class="price">{{.PriceText}}</span>{{end}}
+        {{if .PriceText}}<span class="price{{if .Unavailable}} unavailable{{end}}">{{.PriceText}}</span>{{end}}
         <span class="site">{{.Site}}</span>
       </div>
       {{if .Notes}}<p class="notes">{{.Notes}}</p>{{end}}

@@ -6,7 +6,7 @@
     <div>
       <h1>{{.Card.Title}}</h1>
       <div class="meta">
-        {{if .Card.PriceText}}<span class="price">{{.Card.PriceText}}</span>{{end}}
+        {{if .Card.PriceText}}<span class="price{{if .Card.Unavailable}} unavailable{{end}}">{{.Card.PriceText}}</span>{{end}}
         <a class="site" href="{{.Card.URL}}" target="_blank" rel="noopener noreferrer">{{.Card.Site}} ↗</a>
       </div>
       {{if .Card.Notes}}<p class="notes">{{.Card.Notes}}</p>{{end}}

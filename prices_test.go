@@ -68,3 +68,54 @@ func TestRefreshPrices(t *testing.T) {
 		}
 	})
 }
+
+func TestAmazonUnavailable(t *testing.T) {
+	noOffer := `<span id="productTitle"> Technique (2009 Remaster) (Vinyl) </span>
+<div id="unqualifiedBuyBox"></div><a id="buybox-see-all-buying-choices">See All Buying Options</a>
+<div data-feature-name="sims-simsContainer"><span class="a-price-whole">35</span></div>`
+	if m := amazonMeta(noOffer, nil, "CAD"); !m.Unavailable || m.Price != "" {
+		t.Errorf("no-offer page: %+v", m)
+	}
+	gone := `<span id="productTitle">MacBook</span><div id="availability"><span> Currently unavailable. </span></div>`
+	if m := amazonMeta(gone, nil, "USD"); !m.Unavailable {
+		t.Errorf("currently-unavailable page: %+v", m)
+	}
+	inStock := `<span id="productTitle">Kindle</span><input id="twister-plus-price-data-price" value="189.99" /><input id="twister-plus-price-data-price-unit" value="$" />`
+	if m := amazonMeta(inStock, nil, "CAD"); m.Unavailable || m.Price != "189.99" {
+		t.Errorf("in-stock page: %+v", m)
+	}
+}
+
+func TestPriceCheckTracksAvailability(t *testing.T) {
+	_, app := newTestApp(t)
+	app.priceRefreshPause = 0
+	app.store.update(func(d *Data) error {
+		d.Items = []*Item{{ID: "v", URL: "https://www.amazon.ca/dp/B002CW4K8W", Title: "Technique", Price: "50.00", Currency: "CAD", Quantity: 1, Status: statusActive}}
+		return nil
+	})
+	shop := Meta{Unavailable: true}
+	app.readShop = func(context.Context, string) (Meta, error) { return shop, nil }
+
+	app.refreshPrices(context.Background())
+	app.store.view(func(d *Data) {
+		it := d.item("v")
+		if !it.Unavailable || it.Price != "50.00" {
+			t.Errorf("after unavailable: %+v", it)
+		}
+		if got := itemPrice(it, "ru"); got != "Временно недоступен в магазине" {
+			t.Errorf("guests see %q", got)
+		}
+	})
+
+	shop = Meta{Price: "45.00", Currency: "CAD"}
+	app.refreshPrices(context.Background())
+	app.store.view(func(d *Data) {
+		it := d.item("v")
+		if it.Unavailable || it.Price != "45.00" {
+			t.Errorf("after back in stock: %+v", it)
+		}
+		if got := itemPrice(it, "en"); got != "CA$45.00" {
+			t.Errorf("guests see %q", got)
+		}
+	})
+}

@@ -33,6 +33,9 @@ type App struct {
 
 	// priceRefreshPause spaces out shop requests in the daily price check.
 	priceRefreshPause time.Duration
+	// readShop is the shop reader the price check uses (a.fetchMeta; tests
+	// replace it).
+	readShop func(ctx context.Context, raw string) (Meta, error)
 
 	discogs *discogsAPI
 }
@@ -56,7 +59,7 @@ func newApp(cfg Config) (*App, error) {
 		return nil, err
 	}
 	client := &http.Client{Timeout: 25 * time.Second}
-	return &App{
+	a := &App{
 		cfg:          cfg,
 		store:        store,
 		adminHash:    hash,
@@ -72,7 +75,9 @@ func newApp(cfg Config) (*App, error) {
 		priceRefreshPause: 5 * time.Second,
 
 		discogs: &discogsAPI{base: "https://api.discogs.com", client: client},
-	}, nil
+	}
+	a.readShop = a.fetchMeta
+	return a, nil
 }
 
 func (a *App) routes() http.Handler {

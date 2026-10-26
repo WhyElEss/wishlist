@@ -52,6 +52,10 @@ var (
 	reAmazonPrice    = regexp.MustCompile(`id="twister-plus-price-data-price" value="([0-9][0-9.,]*)"`)
 	reAmazonTitle    = regexp.MustCompile(`id="productTitle"[^>]*>([^<]+)<`)
 	reAmazonImage    = regexp.MustCompile(`<img\b[^>]*\bid="landingImage"[^>]*>`)
+	// Amazon marks a page with no offer of its own (only "See All Buying
+	// Options", amazon.ca) or "Currently unavailable" (amazon.com); both seen
+	// on real pages.
+	reAmazonNoOffer  = regexp.MustCompile(`id="unqualifiedBuyBox"|id="buybox-see-all-buying-choices"|>\s*Currently unavailable`)
 	reAmazonUnit     = regexp.MustCompile(`id="twister-plus-price-data-price-unit" value="([^"]*)"`)
 	reUSZip          = regexp.MustCompile(`\b(\d{5})(?:-\d{4})?\b`)
 )
@@ -199,6 +203,9 @@ func amazonMeta(page string, final *url.URL, currency string) Meta {
 				m.Currency = currency
 			}
 		}
+	}
+	if m.Price == "" && reAmazonNoOffer.MatchString(page) {
+		m.Unavailable = true
 	}
 	return m
 }
