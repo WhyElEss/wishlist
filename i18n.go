@@ -171,15 +171,18 @@ func formatPrice(price, currency string) string {
 	return strings.TrimSpace(price + " " + currency)
 }
 
-// itemPrice is the price as visitors see it. Discogs has no shop price, only
-// the cheapest marketplace offer, so it reads "from $8.00".
+// itemPrice is the price as visitors see it. A Discogs master or release has
+// no shop price, only the cheapest marketplace offer, so it reads "from
+// $8.00"; a single listing has a fixed price.
 func itemPrice(it *Item, lang string) string {
 	p := formatPrice(it.Price, it.Currency)
 	if p == "" {
 		return ""
 	}
 	if u, err := url.Parse(it.URL); err == nil && isDiscogs(u) {
-		return tr(lang, "price_from") + " " + p
+		if kind, _, ok := discogsRef(u); ok && kind != "listing" {
+			return tr(lang, "price_from") + " " + p
+		}
 	}
 	return p
 }

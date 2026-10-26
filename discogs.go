@@ -15,8 +15,8 @@ import (
 
 // Discogs pages sit behind a Cloudflare JavaScript challenge (HTTP 403 "Just
 // a moment..." for any plain client), but the public API at api.discogs.com
-// answers without a key (25 requests a minute). Master and release links are
-// read from it.
+// answers without a key (25 requests a minute). Master, release and
+// marketplace listing links are read from it.
 type discogsAPI struct {
 	base   string // https://api.discogs.com; a test server in tests
 	client *http.Client
@@ -33,16 +33,55 @@ func isDiscogs(u *url.URL) bool {
 	return host == "discogs.com" || host == "www.discogs.com"
 }
 
-// /master/239695-Various-..., /release/201415-..., optionally after a
-// language prefix such as /fr/.
-var reDiscogsPath = regexp.MustCompile(`^/(?:[a-z]{2}(?:-[a-z]{2})?/)?(master|release)/(\d+)(?:[-/]|$)`)
+// /master/239695-Various-..., /release/201415-..., /shop/item/3170084632 or
+// /sell/item/3170084632 (a listing), optionally after a language prefix such
+// as /fr/.
+var reDiscogsPath = regexp.MustCompile(`^/(?:[a-z]{2}(?:-[a-z]{2})?/)?(master|release|shop/item|sell/item)/(\d+)(?:[-/]|$)`)
 
+// discogsRef returns kind "master", "release" or "listing" and the ID.
 func discogsRef(u *url.URL) (kind, id string, ok bool) {
 	m := reDiscogsPath.FindStringSubmatch(strings.ToLower(u.Path))
 	if m == nil {
 		return "", "", false
 	}
+	if strings.HasSuffix(m[1], "/item") {
+		return "listing", m[2], true
+	}
 	return m[1], m[2], true
+}
+
+// fetchListing reads one seller's offer: a fixed price in USD.
+func (d *discogsAPI) fetchListing(ctx context.Context, u *url.URL, id string) (Meta, error) {
+	var l struct {
+		Status string `json:"status"`
+		Price  struct {
+			Value    float64 `json:"value"`
+			Currency string  `json:"currency"`
+		} `json:"price"`
+		Release struct {
+			Artist string `json:"artist"`
+			Title  string `json:"title"`
+			Images []struct {
+				Type string `json:"type"`
+				URI  string `json:"uri"`
+			} `json:"images"`
+		} `json:"release"`
+	}
+	if err := d.get(ctx, "/marketplace/listings/"+id+"?curr_abbr=USD", &l); err != nil {
+		return Meta{}, err
+	}
+	it := discogsItem{Title: l.Release.Title, Images: l.Release.Images}
+	if l.Release.Artist != "" {
+		it.Artists = append(it.Artists, struct {
+			Name string `json:"name"`
+		}{l.Release.Artist})
+	}
+	m := Meta{Title: it.name(), Image: it.image(), FinalURL: u}
+	// A sold or withdrawn listing keeps the last known price.
+	if l.Status == "For Sale" && l.Price.Value > 0 {
+		m.Price, m.Currency = formatAmount(l.Price.Value), l.Price.Currency
+	}
+	return m, nil
 }
 
 func (d *discogsAPI) get(ctx context.Context, path string, v any) error {
@@ -108,7 +147,10 @@ func formatAmount(v float64) string { return strconv.FormatFloat(v, 'f', 2, 64) 
 func (d *discogsAPI) fetchMeta(ctx context.Context, u *url.URL) (Meta, error) {
 	kind, id, ok := discogsRef(u)
 	if !ok {
-		return Meta{}, errors.New("Discogs: only master and release links can be read")
+		return Meta{}, errors.New("Discogs: only master, release and listing links can be read")
+	}
+	if kind == "listing" {
+		return d.fetchListing(ctx, u, id)
 	}
 	var it discogsItem
 	if err := d.get(ctx, "/"+kind+"s/"+id, &it); err != nil {
