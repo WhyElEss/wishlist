@@ -37,6 +37,8 @@ type Meta struct {
 	FinalURL *url.URL
 	// Unavailable: the shop page says it does not sell the item right now.
 	Unavailable bool
+	// Format is vinyl, cd or cassette when the shop says so (Discogs).
+	Format string
 }
 
 func (m Meta) complete() bool { return m.Title != "" && m.Image != "" && m.Price != "" }

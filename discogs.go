@@ -65,6 +65,7 @@ func (d *discogsAPI) fetchListing(ctx context.Context, u *url.URL, id string) (M
 		Release struct {
 			Artist string `json:"artist"`
 			Title  string `json:"title"`
+			Format string `json:"format"`
 			Images []struct {
 				Type string `json:"type"`
 				URI  string `json:"uri"`
@@ -80,7 +81,7 @@ func (d *discogsAPI) fetchListing(ctx context.Context, u *url.URL, id string) (M
 			Name string `json:"name"`
 		}{l.Release.Artist})
 	}
-	m := Meta{Title: it.name(), Image: it.image(), FinalURL: u}
+	m := Meta{Title: it.name(), Image: it.image(), FinalURL: u, Format: formatFromDescription(l.Release.Format)}
 	// A sold or withdrawn listing keeps the last known price.
 	if l.Status == "For Sale" && l.Price.Value > 0 {
 		m.Price, m.Currency = formatAmount(l.Price.Value), l.Price.Currency
@@ -116,6 +117,18 @@ type discogsItem struct {
 		URI  string `json:"uri"`
 	} `json:"images"`
 	LowestPrice *float64 `json:"lowest_price"`
+	Formats     []struct {
+		Name string `json:"name"`
+	} `json:"formats"`
+	MainRelease int `json:"main_release"`
+}
+
+func (it discogsItem) format() string {
+	var names []string
+	for _, f := range it.Formats {
+		names = append(names, f.Name)
+	}
+	return formatFromNames(names)
 }
 
 // Discogs tells same-named artists apart with " (2)" and similar.
@@ -160,7 +173,14 @@ func (d *discogsAPI) fetchMeta(ctx context.Context, u *url.URL) (Meta, error) {
 	if err := d.get(ctx, "/"+kind+"s/"+id, &it); err != nil {
 		return Meta{}, err
 	}
-	m := Meta{Title: it.name(), Image: it.image(), FinalURL: u}
+	m := Meta{Title: it.name(), Image: it.image(), FinalURL: u, Format: it.format()}
+	if kind == "master" && it.MainRelease > 0 {
+		// Masters carry no format; the main release has one.
+		var main discogsItem
+		if err := d.get(ctx, "/releases/"+strconv.Itoa(it.MainRelease), &main); err == nil {
+			m.Format = main.format()
+		}
+	}
 
 	switch kind {
 	case "release":

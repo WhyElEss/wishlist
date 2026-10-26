@@ -222,3 +222,14 @@ table.items.save-failed { outline: 2px solid var(--danger); }
 .testmail { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-bottom: 12px; }
 .testmail input { flex: 1; min-width: 220px; }
 .price.unavailable { font-weight: 500; font-size: .9rem; color: var(--muted); }
+
+/* Discogs condition rules. */
+.cond { margin: 0; font-size: .85rem; font-weight: 600; }
+.grading { margin: 16px 0 8px; padding: 14px 18px; border-radius: 10px; background: var(--bg); }
+.grading h3 { margin: 0 0 6px; font-size: 1rem; }
+.grading h4 { margin: 12px 0 4px; font-size: .95rem; }
+.grading h4 .hint { font-weight: 400; }
+.grading dl { margin: 0; display: grid; gap: 6px; }
+.grading dt { font-weight: 600; }
+.grading dd { margin: 0 0 4px; }
+.grading p { margin: 0 0 6px; }

@@ -211,7 +211,7 @@ func loadTemplates() (map[string]*template.Template, error) {
 	pages := []string{"index", "reserve", "reservation", "message", "login", "admin", "edit", "settings"}
 	m := map[string]*template.Template{}
 	for _, p := range pages {
-		t, err := template.New(p).Funcs(templateFuncs).ParseFS(assets, "templates/layout.html", "templates/"+p+".html")
+		t, err := template.New(p).Funcs(templateFuncs).ParseFS(assets, "templates/layout.html", "templates/grading.html", "templates/"+p+".html")
 		if err != nil {
 			return nil, err
 		}

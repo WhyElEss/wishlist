@@ -12,6 +12,7 @@
       {{if .Card.Notes}}<p class="notes">{{.Card.Notes}}</p>{{end}}
     </div>
   </div>
+  {{if .Card.Discogs}}{{template "grading" .}}{{end}}
   <h2>{{t .Lang "reserve_title"}}</h2>
   <p>{{tf .Lang "reserve_explain" (days .Lang .Days)}}</p>
   <div class="ship-rules">

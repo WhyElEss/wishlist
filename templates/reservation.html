@@ -15,6 +15,8 @@
     </div>
   </div>
 
+  {{if .Card.Discogs}}{{template "grading" .}}{{end}}
+
   <h2>{{t .Lang "res_ship_to"}}</h2>
   <p class="ship-note">{{t .Lang "res_ship_own"}}</p>
   {{if .FixedRegion}}

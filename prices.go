@@ -102,6 +102,9 @@ func (a *App) refreshPrices(ctx context.Context) {
 				it.Price, it.Currency = meta.Price, meta.Currency
 				changed++
 			}
+			if meta.Format != "" {
+				it.Format = meta.Format
+			}
 			if it.Unavailable {
 				log.Printf("price %s: back in the shop at %s (%s)", siteName(it.URL), formatPrice(meta.Price, meta.Currency), it.Title)
 				it.Unavailable = false

@@ -154,6 +154,8 @@ type Item struct {
 	// Unavailable: on the last read the shop did not sell the item; the last
 	// known price is kept but not shown.
 	Unavailable bool `json:"unavailable,omitempty"`
+	// Format (vinyl, cd, cassette) picks the Discogs condition texts.
+	Format string `json:"format,omitempty"`
 
 	Reservations []*Reservation `json:"reservations,omitempty"`
 	CreatedAt    time.Time      `json:"created_at"`

@@ -16,6 +16,7 @@
         {{if .PriceText}}<span class="price{{if .Unavailable}} unavailable{{end}}">{{.PriceText}}</span>{{end}}
         <span class="site">{{.Site}}</span>
       </div>
+      {{if .Discogs}}<p class="cond">{{t $.Lang "cond_short"}}</p>{{end}}
       {{if .Notes}}<p class="notes">{{.Notes}}</p>{{end}}
       {{if gt .Quantity 1}}<p class="qty">{{tf $.Lang "left" .Left .Quantity}}</p>{{end}}
       <div class="actions">

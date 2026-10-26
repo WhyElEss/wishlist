@@ -228,6 +228,7 @@ func (a *App) handleAdd(w http.ResponseWriter, r *http.Request) {
 		it.PriceCheckedAt = &now
 	}
 	it.Unavailable = meta.Unavailable
+	it.Format = meta.Format
 	if it.Title == "" {
 		it.Title = siteName(u.String())
 	}
@@ -426,6 +427,9 @@ func (a *App) handleRefresh(w http.ResponseWriter, r *http.Request) {
 		}
 		if ferr == nil {
 			it.Unavailable = meta.Unavailable
+		}
+		if meta.Format != "" {
+			it.Format = meta.Format
 		}
 		if newImage != "" {
 			oldImage = it.Image

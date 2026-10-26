@@ -5,6 +5,7 @@ import (
 	"log"
 	"net/http"
 	"net/mail"
+	"net/url"
 	"path/filepath"
 	"regexp"
 	"sort"
@@ -22,11 +23,15 @@ type cardView struct {
 	Priority                                      int
 	Quantity, Left                                int
 	Available, Unavailable                        bool
+
+	// Discogs gifts: Mint/NM only; Grading holds the definitions.
+	Discogs bool
+	Grading grading
 	MineToken                                     string
 }
 
 func makeCard(it *Item, now time.Time, lang string) cardView {
-	return cardView{
+	c := cardView{
 		ID:        it.ID,
 		URL:       it.URL,
 		Title:     it.Title,
@@ -41,6 +46,10 @@ func makeCard(it *Item, now time.Time, lang string) cardView {
 
 		Unavailable: it.Unavailable,
 	}
+	if u, err := url.Parse(it.URL); err == nil && isDiscogs(u) {
+		c.Discogs, c.Grading = true, gradingFor(lang, it.Format)
+	}
+	return c
 }
 
 // mineTokens reads the reservation tokens this browser holds.
