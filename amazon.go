@@ -55,9 +55,9 @@ var (
 	// Amazon marks a page with no offer of its own (only "See All Buying
 	// Options", amazon.ca) or "Currently unavailable" (amazon.com); both seen
 	// on real pages.
-	reAmazonNoOffer  = regexp.MustCompile(`id="unqualifiedBuyBox"|id="buybox-see-all-buying-choices"|>\s*Currently unavailable`)
-	reAmazonUnit     = regexp.MustCompile(`id="twister-plus-price-data-price-unit" value="([^"]*)"`)
-	reUSZip          = regexp.MustCompile(`\b(\d{5})(?:-\d{4})?\b`)
+	reAmazonNoOffer = regexp.MustCompile(`id="unqualifiedBuyBox"|id="buybox-see-all-buying-choices"|>\s*Currently unavailable`)
+	reAmazonUnit    = regexp.MustCompile(`id="twister-plus-price-data-price-unit" value="([^"]*)"`)
+	reUSZip         = regexp.MustCompile(`\b(\d{5})(?:-\d{4})?\b`)
 )
 
 // usZip takes the 5-digit ZIP from the US postal code; 10001 when there is none.
