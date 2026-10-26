@@ -28,12 +28,12 @@ var (
 )
 
 type Settings struct {
-	TitleRU   string `json:"title_ru"`
-	TitleEN   string `json:"title_en"`
-	IntroRU   string `json:"intro_ru"`
-	IntroEN   string `json:"intro_en"`
-	AddrUS    Address `json:"addr_us"`
-	AddrCA    Address `json:"addr_ca"`
+	TitleRU string  `json:"title_ru"`
+	TitleEN string  `json:"title_en"`
+	IntroRU string  `json:"intro_ru"`
+	IntroEN string  `json:"intro_en"`
+	AddrUS  Address `json:"addr_us"`
+	AddrCA  Address `json:"addr_ca"`
 	// ShowReservations is the spoiler switch: off hides who reserved what from
 	// the admin panel and from the Telegram notifications.
 	ShowReservations bool `json:"show_reservations"`
