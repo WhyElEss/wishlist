@@ -4,7 +4,7 @@ A self-hosted gift wishlist with anonymous reservations. One Go binary built onl
 
 The owner adds links to any online shop; guests see cards with a picture, price and store, pick a gift without signing up, and the card turns grey for everyone else. After reserving, the guest gets the shipping address to use and a private link to mark the gift as bought or cancel.
 
-The guest-facing site is in Russian and English (picked from the browser, with a switch). The admin panel is in Russian.
+The guest-facing site is in Russian and English (picked from the browser, with a switch); Russian counts use the Unicode CLDR plural forms (1 день, 2 дня, 5 дней). The admin panel is in Russian.
 
 ## Features
 
@@ -24,6 +24,7 @@ The guest-facing site is in Russian and English (picked from the browser, with a
 - Per-gift quantity, notes, status (active / received / already have) and shipping region (auto / US only / Canada only).
 - Spoiler-free mode (default): the admin panel and the owner's notices do not reveal what was reserved.
 - Prices are re-read daily at 06:00 (container time zone), and one minute after start when the last check is more than a day old. A price is only replaced by a price actually read from the shop; manual prices for shops that cannot be read stay as they are.
+- When Amazon has no offer of its own for an item ("See All Buying Options" only, or "Currently unavailable"), guests see "Temporarily unavailable in store" instead of a price until the daily check reads a price again.
 - Email notices to the owner about reservations, purchases, cancellations and expiries.
 - Shipping addresses for the US and Canada are edited in the settings as separate fields (name, two address lines, city, province or state, postal code, country). They are stored in the data volume, not in the repository.
 
@@ -39,6 +40,7 @@ The guest-facing site is in Russian and English (picked from the browser, with a
 |---|---|---|
 | amazon.com | Product page in a cookie session with a US delivery ZIP | Seen from Canada, amazon.com hides prices of items that do not ship there. The app sets the ZIP through Amazon's own "Deliver to" dialog once per session. The ZIP is the postal code of the US address in the settings (10001 if empty). |
 | amazon.ca | Product page, browser User-Agent | Price in CAD. |
+| Amazon, no offer | Markers `unqualifiedBuyBox` / `buybox-see-all-buying-choices` or "Currently unavailable" | Shown as temporarily unavailable; the last known price is kept but hidden. |
 | Discogs | Public API at `api.discogs.com` (no key) | Pages are behind a Cloudflare challenge. `/master/…` and `/release/…` and `/sell/release/…` show the cheapest marketplace offer in USD as "from $X"; `/shop/item/…` and `/sell/item/…` show the listing's fixed price. |
 | Any other shop | OpenGraph tags and schema.org `Product` JSON-LD | Tried with a browser User-Agent and with the Facebook preview crawler's. |
 | Sites that refuse non-browser clients | Not readable | Seen so far: eBay and Casio (Akamai Bot Manager), Best Buy Canada and LEGO (HTTP 403). The card is created with a note; title, price and picture are filled in by hand. |
