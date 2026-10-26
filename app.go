@@ -29,6 +29,7 @@ type App struct {
 	reserveLimit *limiter
 	loginLimit   *limiter
 	tg           *telegram
+	amazon       *amazonUS
 	mail         *mailer
 }
 
@@ -63,6 +64,7 @@ func newApp(cfg Config) (*App, error) {
 		loginLimit:   newLimiter(5, 15*time.Minute),
 		tg:           &telegram{token: cfg.TelegramToken, chat: cfg.TelegramChat, client: client},
 		mail:         &mailer{host: cfg.SMTPHost, port: cfg.SMTPPort, user: cfg.SMTPUser, pass: cfg.SMTPPass, from: cfg.SMTPFrom},
+		amazon:       newAmazonUS("https://www.amazon.com", store.usZip),
 	}, nil
 }
 

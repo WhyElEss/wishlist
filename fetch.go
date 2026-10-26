@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"net/url"
 	"regexp"
+	"slices"
 	"strconv"
 	"strings"
 )
@@ -87,7 +88,13 @@ func fetchMeta(ctx context.Context, c *http.Client, raw string) (Meta, error) {
 		}
 	}
 	if best.Title == "" && best.Image == "" && best.Price == "" && len(errs) > 0 {
-		return best, errors.Join(errs...)
+		var msgs []string
+		for _, e := range errs {
+			if !slices.Contains(msgs, e.Error()) {
+				msgs = append(msgs, e.Error())
+			}
+		}
+		return best, errors.New(strings.Join(msgs, "; "))
 	}
 	return best, nil
 }

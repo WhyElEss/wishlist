@@ -189,7 +189,7 @@ func (a *App) handleAdd(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := context.WithTimeout(r.Context(), 60*time.Second)
 	defer cancel()
 
-	meta, ferr := fetchMeta(ctx, a.client, u.String())
+	meta, ferr := a.fetchMeta(ctx, u.String())
 	if ferr != nil {
 		log.Printf("fetch %s: %v", u.Host, ferr)
 	}
@@ -378,7 +378,7 @@ func (a *App) handleRefresh(w http.ResponseWriter, r *http.Request) {
 	}
 	ctx, cancel := context.WithTimeout(r.Context(), 60*time.Second)
 	defer cancel()
-	meta, ferr := fetchMeta(ctx, a.client, pageURL)
+	meta, ferr := a.fetchMeta(ctx, pageURL)
 	note := fetchNote(meta, ferr)
 	var newImage string
 	if meta.Image != "" {
