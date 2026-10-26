@@ -125,6 +125,10 @@ type Reservation struct {
 	ExpiresAt    time.Time  `json:"expires_at"`
 	PurchasedAt  *time.Time `json:"purchased_at,omitempty"`
 	ReminderSent bool       `json:"reminder_sent,omitempty"`
+
+	// LinkEmailed: the guest left an email, so the reservation link went to
+	// their inbox. Unlike Email it stays after the gift is marked as bought.
+	LinkEmailed bool `json:"link_emailed,omitempty"`
 }
 
 // live reports whether the reservation still holds its unit of the item.

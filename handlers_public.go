@@ -241,7 +241,7 @@ func (a *App) handleReserve(w http.ResponseWriter, r *http.Request) {
 		expires = now.AddDate(0, 0, d.Settings.ReserveDays)
 		it.Reservations = append(it.Reservations, &Reservation{
 			ID: newID(), Token: token, Email: email, Lang: lang,
-			CreatedAt: now, ExpiresAt: expires,
+			CreatedAt: now, ExpiresAt: expires, LinkEmailed: email != "",
 		})
 		title, spoilers = it.Title, d.Settings.ShowReservations
 		return nil
@@ -286,7 +286,11 @@ type reservationPage struct {
 	ExpiresAt time.Time
 	Purchased bool
 	Emailed   bool
-	Regions   []regionView
+
+	// MailOn: guests were offered the email field, so "no email" was a choice.
+	MailOn bool
+
+	Regions []regionView
 
 	// FixedRegion: the item allows a single address, so there is no switch.
 	FixedRegion bool
@@ -310,7 +314,7 @@ func (a *App) handleReservation(w http.ResponseWriter, r *http.Request) {
 		p.Card = makeCard(it, now, lang)
 		p.ExpiresAt = res.ExpiresAt
 		p.Purchased = res.PurchasedAt != nil
-		p.Emailed = res.Email != ""
+		p.Emailed = res.LinkEmailed || res.Email != "" // Email alone: reservations made before LinkEmailed existed
 		itemRegion = it.Region
 	})
 	if !found {
@@ -343,6 +347,7 @@ func (a *App) handleReservation(w http.ResponseWriter, r *http.Request) {
 	p.base = a.base(r, lang, tr(lang, "res_title"))
 	p.Token = token
 	p.SelfURL = a.origin(r) + "/r/" + token
+	p.MailOn = a.mail.enabled()
 	if r.URL.Query().Get("m") == "purchased" {
 		p.Flash = tr(lang, "purchased_done")
 	}

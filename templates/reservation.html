@@ -49,12 +49,15 @@
   {{end}}
 
   <div class="savelink">
-    {{if .Emailed}}<p><strong>{{t .Lang "res_link_emailed"}}</strong></p>{{end}}
-    <p>{{t .Lang "res_save_link"}}</p>
+    {{if .Emailed}}
+    <p><strong>{{t .Lang "res_link_emailed"}}</strong></p>
+    {{else}}
+    <p>{{if .MailOn}}{{t .Lang "res_link_no_email"}}{{else}}{{t .Lang "res_save_link"}}{{end}}</p>
     <div class="linkbox">
       <code id="reslink">{{.SelfURL}}</code>
       <button type="button" class="btn small" data-copy="reslink" data-copied="{{t .Lang "copied"}}">{{t .Lang "copy"}}</button>
     </div>
+    {{end}}
     {{if not .Purchased}}<p class="hint">{{tf .Lang "res_expires" (date .Lang .ExpiresAt)}}</p>{{end}}
   </div>
 
