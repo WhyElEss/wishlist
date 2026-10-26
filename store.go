@@ -142,12 +142,12 @@ type Item struct {
 	Currency string `json:"currency,omitempty"`
 	// Region picks the shipping address: "US", "CA", or "" for "by the
 	// visitor's country".
-	Region       string         `json:"region,omitempty"`
-	Notes        string         `json:"notes,omitempty"`
-	Priority     int            `json:"priority,omitempty"`
-	Quantity     int            `json:"quantity"`
-	Status       string         `json:"status"`
-	FetchNote    string         `json:"fetch_note,omitempty"`
+	Region    string `json:"region,omitempty"`
+	Notes     string `json:"notes,omitempty"`
+	Priority  int    `json:"priority,omitempty"`
+	Quantity  int    `json:"quantity"`
+	Status    string `json:"status"`
+	FetchNote string `json:"fetch_note,omitempty"`
 
 	// PriceCheckedAt is when a price was last read from the shop's page.
 	PriceCheckedAt *time.Time `json:"price_checked_at,omitempty"`
