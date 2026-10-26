@@ -51,6 +51,7 @@ var (
 	reAmazonDeliver  = regexp.MustCompile(`id="glow-ingress-line2"[^>]*>\s*([^<]*)`)
 	reAmazonPrice    = regexp.MustCompile(`id="twister-plus-price-data-price" value="([0-9][0-9.,]*)"`)
 	reAmazonTitle    = regexp.MustCompile(`id="productTitle"[^>]*>([^<]+)<`)
+	reAmazonImage    = regexp.MustCompile(`<img\b[^>]*\bid="landingImage"[^>]*>`)
 	reAmazonUnit     = regexp.MustCompile(`id="twister-plus-price-data-price-unit" value="([^"]*)"`)
 	reUSZip          = regexp.MustCompile(`\b(\d{5})(?:-\d{4})?\b`)
 )
@@ -171,6 +172,16 @@ func (az *amazonUS) fetchMeta(ctx context.Context, raw string) (Meta, error) {
 	// <title> reads "Amazon.com: <name>"; the product title element has the name alone.
 	if t := reAmazonTitle.FindStringSubmatch(page); t != nil && clean(t[1]) != "" {
 		m.Title = clean(t[1])
+	}
+	if m.Image == "" {
+		if tag := reAmazonImage.FindString(page); tag != "" {
+			a := attrs(tag)
+			src := a["data-old-hires"]
+			if src == "" {
+				src = a["src"]
+			}
+			m.Image = resolveURL(final, clean(src))
+		}
 	}
 	if m.Price == "" {
 		if p := reAmazonPrice.FindStringSubmatch(page); p != nil {

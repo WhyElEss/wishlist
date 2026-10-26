@@ -32,6 +32,7 @@ func fakeAmazon(t *testing.T, dialogs *int32) *httptest.Server {
 <span class="nav-line-2" id="glow-ingress-line2">
   New York ` + c.Value + `&zwnj;</span>
 <span id="productTitle" class="a-size-large">   Test Charger   </span>
+<img alt="Test" src="/images/small.jpg" data-old-hires="/images/I/big._AC_SL1500_.jpg" id="landingImage" data-a-dynamic-image="{}">
 <input type="hidden" id="twister-plus-price-data-price" value="19.99" />
 <input type="hidden" id="twister-plus-price-data-price-unit" value="$" /></body></html>`))
 				return
@@ -73,7 +74,7 @@ func TestAmazonUSSetsZip(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		if m.Price != "19.99" || m.Currency != "USD" || m.Title != "Test Charger" {
+		if m.Price != "19.99" || m.Currency != "USD" || m.Title != "Test Charger" || m.Image != srv.URL+"/images/I/big._AC_SL1500_.jpg" {
 			t.Fatalf("fetch %d: got %+v", i, m)
 		}
 	}
