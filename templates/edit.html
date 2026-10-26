@@ -13,7 +13,8 @@
       <small class="hint">Если поменять ссылку, картинка скачается заново. Пустое поле убирает картинку.</small>
     </label>
     <div class="row">
-      <label>Цена<input name="price" value="{{.Item.Price}}" inputmode="decimal" maxlength="32"></label>
+      <label>Цена<input name="price" value="{{.Item.Price}}" inputmode="decimal" maxlength="32">
+        <small class="hint">{{if .Item.PriceCheckedAt}}С сайта: {{datetime .Item.PriceCheckedAt}}. Проверяется каждый день в 6:00.{{else}}С сайта пока не получена. Ежедневная проверка в 6:00 подставит её, если сайт отдаст цену.{{end}}</small></label>
       <label>Валюта<input name="currency" value="{{.Item.Currency}}" maxlength="3" placeholder="USD"></label>
       <label>Количество<input type="number" name="quantity" min="1" max="99" value="{{.Item.Quantity}}"></label>
     </div>

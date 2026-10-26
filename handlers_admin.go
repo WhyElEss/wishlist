@@ -220,6 +220,9 @@ func (a *App) handleAdd(w http.ResponseWriter, r *http.Request) {
 	if it.Region == "" {
 		it.Region = detectRegion(meta.FinalURL) // short links such as a.co
 	}
+	if meta.Price != "" {
+		it.PriceCheckedAt = &now
+	}
 	if it.Title == "" {
 		it.Title = siteName(u.String())
 	}
@@ -413,6 +416,8 @@ func (a *App) handleRefresh(w http.ResponseWriter, r *http.Request) {
 		}
 		if meta.Price != "" {
 			it.Price, it.Currency = meta.Price, meta.Currency
+			now := time.Now()
+			it.PriceCheckedAt = &now
 		}
 		if newImage != "" {
 			oldImage = it.Image

@@ -148,6 +148,8 @@ type Item struct {
 	Quantity     int            `json:"quantity"`
 	Status       string         `json:"status"`
 	FetchNote    string         `json:"fetch_note,omitempty"`
+	// PriceCheckedAt is when a price was last read from the shop's page.
+	PriceCheckedAt *time.Time `json:"price_checked_at,omitempty"`
 	Reservations []*Reservation `json:"reservations,omitempty"`
 	CreatedAt    time.Time      `json:"created_at"`
 	UpdatedAt    time.Time      `json:"updated_at"`
@@ -184,6 +186,8 @@ type Data struct {
 	// ManualOrder marks files written since Items became the display order;
 	// older files kept them oldest first and are reversed once on load.
 	ManualOrder bool `json:"manual_order"`
+	// PricesCheckedAt is when the daily price check last finished.
+	PricesCheckedAt time.Time `json:"prices_checked_at"`
 }
 
 // reorder puts the items with the given IDs first, in that order; items not

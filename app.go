@@ -30,6 +30,8 @@ type App struct {
 	loginLimit   *limiter
 	tg           *telegram
 	amazon       *amazonUS
+	// priceRefreshPause spaces out shop requests in the daily price check.
+	priceRefreshPause time.Duration
 	mail         *mailer
 }
 
@@ -65,6 +67,7 @@ func newApp(cfg Config) (*App, error) {
 		tg:           &telegram{token: cfg.TelegramToken, chat: cfg.TelegramChat, client: client},
 		mail:         &mailer{host: cfg.SMTPHost, port: cfg.SMTPPort, user: cfg.SMTPUser, pass: cfg.SMTPPass, from: cfg.SMTPFrom},
 		amazon:       newAmazonUS("https://www.amazon.com", store.usZip),
+		priceRefreshPause: 5 * time.Second,
 	}, nil
 }
 
