@@ -250,9 +250,9 @@ func (a *App) handleReserve(w http.ResponseWriter, r *http.Request) {
 
 	a.addMine(w, r, token)
 	if spoilers {
-		a.tg.send("🎁 Забронирован подарок: " + title)
+		a.notify("подарок забронирован", "Забронирован подарок: "+title)
 	} else {
-		a.tg.send("🎁 Кто-то забронировал подарок из вашего списка.")
+		a.notify("подарок забронирован", "Кто-то забронировал подарок из вашего списка. Какой именно, не показывается: включён режим без спойлеров.")
 	}
 	if email != "" {
 		go a.sendConfirmation(email, lang, token, title, expires)
@@ -369,9 +369,9 @@ func (a *App) handlePurchased(w http.ResponseWriter, r *http.Request) {
 	}
 	if first {
 		if spoilers {
-			a.tg.send("✅ Подарок куплен: " + title)
+			a.notify("подарок куплен", "Подарок куплен: "+title)
 		} else {
-			a.tg.send("✅ Один из подарков куплен.")
+			a.notify("подарок куплен", "Один из подарков отмечен купленным.")
 		}
 	}
 	http.Redirect(w, r, "/r/"+token+"?m=purchased", http.StatusSeeOther)
@@ -409,9 +409,9 @@ func (a *App) handleCancel(w http.ResponseWriter, r *http.Request) {
 	}
 	a.dropMine(w, r, token)
 	if spoilers {
-		a.tg.send("↩️ Бронь отменена: " + title)
+		a.notify("бронь отменена", "Бронь отменена: "+title)
 	} else {
-		a.tg.send("↩️ Одну бронь отменили — подарок снова доступен.")
+		a.notify("бронь отменена", "Одну бронь отменили, подарок снова доступен.")
 	}
 	http.Redirect(w, r, "/?m=cancelled", http.StatusSeeOther)
 }

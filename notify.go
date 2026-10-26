@@ -1,70 +1,18 @@
 package main
 
 import (
-	"context"
 	"crypto/tls"
 	"errors"
 	"fmt"
-	"io"
 	"log"
 	"mime"
 	"net"
-	"net/http"
 	"net/mail"
 	"net/smtp"
 	"net/url"
 	"strings"
 	"time"
 )
-
-type telegram struct {
-	token, chat string
-	client      *http.Client
-}
-
-func (t *telegram) enabled() bool { return t.token != "" && t.chat != "" }
-
-// send delivers in the background; failures only reach the log.
-func (t *telegram) send(text string) {
-	if !t.enabled() {
-		return
-	}
-	go func() {
-		ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
-		defer cancel()
-		if err := t.sendSync(ctx, text); err != nil {
-			log.Printf("telegram: %v", err)
-		}
-	}()
-}
-
-func (t *telegram) sendSync(ctx context.Context, text string) error {
-	if !t.enabled() {
-		return errors.New("TELEGRAM_BOT_TOKEN or TELEGRAM_CHAT_ID is not set")
-	}
-	form := url.Values{"chat_id": {t.chat}, "text": {text}, "disable_web_page_preview": {"true"}}
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost,
-		"https://api.telegram.org/bot"+t.token+"/sendMessage", strings.NewReader(form.Encode()))
-	if err != nil {
-		return t.redact(err)
-	}
-	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-	resp, err := t.client.Do(req)
-	if err != nil {
-		return t.redact(err)
-	}
-	defer resp.Body.Close()
-	if resp.StatusCode != http.StatusOK {
-		b, _ := io.ReadAll(io.LimitReader(resp.Body, 512))
-		return fmt.Errorf("HTTP %d: %s", resp.StatusCode, strings.TrimSpace(string(b)))
-	}
-	return nil
-}
-
-// redact keeps the bot token out of logs: url.Error includes the request URL.
-func (t *telegram) redact(err error) error {
-	return errors.New(strings.ReplaceAll(err.Error(), t.token, "***"))
-}
 
 // helo is the name given to the SMTP server in EHLO; without it Go says
 // "localhost", which shows up in the Received header spam filters read.
@@ -157,4 +105,31 @@ func heloName(cfg Config) string {
 		}
 	}
 	return ""
+}
+
+// notifyTo is where the owner's notices go: NOTIFY_EMAIL, or the sending
+// address itself (wishlist@…) when that is not set.
+func notifyTo(cfg Config) string {
+	if cfg.NotifyEmail != "" {
+		return cfg.NotifyEmail
+	}
+	if a, err := mail.ParseAddress(cfg.SMTPFrom); err == nil {
+		return a.Address
+	}
+	return ""
+}
+
+// notify emails the owner about a reservation change, in the background;
+// failures only reach the log. Without mail settings it does nothing.
+func (a *App) notify(subject, text string) {
+	to := notifyTo(a.cfg)
+	if !a.mail.enabled() || to == "" {
+		return
+	}
+	body := text + "\n\n" + a.cfg.BaseURL + "/admin\n"
+	go func() {
+		if err := a.mail.send(to, "Вишлист: "+subject, body); err != nil {
+			log.Printf("owner notice: %v", err)
+		}
+	}()
 }

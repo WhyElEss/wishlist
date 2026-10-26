@@ -28,7 +28,6 @@ type App struct {
 	tpl          map[string]*template.Template
 	reserveLimit *limiter
 	loginLimit   *limiter
-	tg           *telegram
 	amazon       *amazonUS
 	mail         *mailer
 
@@ -67,7 +66,6 @@ func newApp(cfg Config) (*App, error) {
 		tpl:          tpl,
 		reserveLimit: newLimiter(5, time.Hour),
 		loginLimit:   newLimiter(5, 15*time.Minute),
-		tg:           &telegram{token: cfg.TelegramToken, chat: cfg.TelegramChat, client: client},
 		mail:         &mailer{host: cfg.SMTPHost, port: cfg.SMTPPort, user: cfg.SMTPUser, pass: cfg.SMTPPass, from: cfg.SMTPFrom, helo: heloName(cfg)},
 		amazon:       newAmazonUS("https://www.amazon.com", store.usZip),
 
@@ -116,7 +114,6 @@ func (a *App) routes() http.Handler {
 	mux.HandleFunc("POST /admin/items/{id}/delete", a.requireAdmin(a.handleDelete))
 	mux.HandleFunc("GET /admin/settings", a.requireAdmin(a.handleSettingsForm))
 	mux.HandleFunc("POST /admin/settings", a.requireAdmin(a.handleSettings))
-	mux.HandleFunc("POST /admin/settings/telegram-test", a.requireAdmin(a.handleTelegramTest))
 	mux.HandleFunc("POST /admin/settings/mail-test", a.requireAdmin(a.handleMailTest))
 
 	return a.secure(mux)
@@ -330,9 +327,9 @@ func (a *App) sweep(now time.Time) {
 	}
 	for _, title := range expired {
 		if spoilers {
-			a.tg.send("⌛ Бронь истекла, подарок снова доступен: " + title)
+			a.notify("бронь истекла", "Бронь истекла, подарок снова доступен: "+title)
 		} else {
-			a.tg.send("⌛ Одна бронь истекла — подарок снова доступен.")
+			a.notify("бронь истекла", "Одна бронь истекла, подарок снова доступен.")
 		}
 	}
 	for _, rm := range reminders {

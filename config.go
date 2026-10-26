@@ -18,8 +18,9 @@ type Config struct {
 	// Cloudflare headers (CF-Connecting-IP, CF-IPCountry).
 	TrustProxy bool
 
-	TelegramToken string
-	TelegramChat  string
+	// NotifyEmail receives the owner's reservation notices; empty means
+	// the SMTP_FROM address.
+	NotifyEmail string
 
 	SMTPHost string
 	SMTPPort string
@@ -37,18 +38,17 @@ func env(key, def string) string {
 
 func loadConfig() (Config, error) {
 	c := Config{
-		Listen:        env("LISTEN_ADDR", ":8080"),
-		DataDir:       env("DATA_DIR", "./data"),
-		AdminHash:     env("ADMIN_PASSWORD_HASH", ""),
-		BaseURL:       strings.TrimRight(env("BASE_URL", ""), "/"),
-		TrustProxy:    env("TRUST_PROXY_HEADERS", "true") != "false",
-		TelegramToken: env("TELEGRAM_BOT_TOKEN", ""),
-		TelegramChat:  env("TELEGRAM_CHAT_ID", ""),
-		SMTPHost:      env("SMTP_HOST", ""),
-		SMTPPort:      env("SMTP_PORT", "587"),
-		SMTPUser:      env("SMTP_USER", ""),
-		SMTPPass:      env("SMTP_PASSWORD", ""),
-		SMTPFrom:      env("SMTP_FROM", ""),
+		Listen:      env("LISTEN_ADDR", ":8080"),
+		DataDir:     env("DATA_DIR", "./data"),
+		AdminHash:   env("ADMIN_PASSWORD_HASH", ""),
+		BaseURL:     strings.TrimRight(env("BASE_URL", ""), "/"),
+		TrustProxy:  env("TRUST_PROXY_HEADERS", "true") != "false",
+		NotifyEmail: env("NOTIFY_EMAIL", ""),
+		SMTPHost:    env("SMTP_HOST", ""),
+		SMTPPort:    env("SMTP_PORT", "587"),
+		SMTPUser:    env("SMTP_USER", ""),
+		SMTPPass:    env("SMTP_PASSWORD", ""),
+		SMTPFrom:    env("SMTP_FROM", ""),
 	}
 	if c.AdminHash == "" {
 		return c, errors.New("ADMIN_PASSWORD_HASH is not set; generate it with: wishlist hashpw")

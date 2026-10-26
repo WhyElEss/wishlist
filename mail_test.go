@@ -83,8 +83,12 @@ func TestMailUI(t *testing.T) {
 	admin := newClient(t)
 	admin.PostForm(srv.URL+"/admin/login", url.Values{"password": {"admin-password"}})
 	resp, _ = admin.Get(srv.URL + "/admin/settings")
-	if page := body(t, resp); !strings.Contains(page, `action="/admin/settings/mail-test"`) || !strings.Contains(page, `name="to"`) {
+	page := body(t, resp)
+	if !strings.Contains(page, `action="/admin/settings/mail-test"`) || !strings.Contains(page, `name="to"`) {
 		t.Error("settings lack the test-mail form with a recipient field")
+	}
+	if !strings.Contains(page, "письмом на wishlist@example.com") || strings.Contains(page, "Telegram") {
+		t.Error("settings do not say where owner notices go, or still mention Telegram")
 	}
 	// Nothing listens on the configured port: the error must name the problem, not claim success.
 	resp, _ = admin.PostForm(srv.URL+"/admin/settings/mail-test", url.Values{"to": {"me@example.com"}})
@@ -131,5 +135,17 @@ func TestMailTexts(t *testing.T) {
 		if strings.Contains(rs+rb, "%!") || !strings.Contains(rb, date) || !strings.Contains(rb, "https://wishlist.example/r/tok") {
 			t.Errorf("%s reminder broken: %q\n%s", lang, rs, rb)
 		}
+	}
+}
+
+func TestNotifyTo(t *testing.T) {
+	if got := notifyTo(Config{SMTPFrom: "Wishlist <wishlist@stanislavski.me>"}); got != "wishlist@stanislavski.me" {
+		t.Errorf("default = %q, want the sender address", got)
+	}
+	if got := notifyTo(Config{SMTPFrom: "Wishlist <wishlist@stanislavski.me>", NotifyEmail: "me@example.com"}); got != "me@example.com" {
+		t.Errorf("NOTIFY_EMAIL ignored: %q", got)
+	}
+	if got := notifyTo(Config{}); got != "" {
+		t.Errorf("no mail settings: %q", got)
 	}
 }

@@ -36,7 +36,7 @@ type Settings struct {
 	AddrUS  Address `json:"addr_us"`
 	AddrCA  Address `json:"addr_ca"`
 	// ShowReservations is the spoiler switch: off hides who reserved what from
-	// the admin panel and from the Telegram notifications.
+	// the admin panel and from the owner's email notices.
 	ShowReservations bool `json:"show_reservations"`
 	ReserveDays      int  `json:"reserve_days"`
 }

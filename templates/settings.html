@@ -25,15 +25,14 @@
 
     <h2>Брони</h2>
     <label>Срок брони, дней<input type="number" name="reserve_days" min="1" max="90" value="{{.Settings.ReserveDays}}"></label>
-    <label class="check"><input type="checkbox" name="show_reservations" value="1"{{if .Settings.ShowReservations}} checked{{end}}> Показывать, что забронировано (спойлеры) в админке и в Telegram</label>
+    <label class="check"><input type="checkbox" name="show_reservations" value="1"{{if .Settings.ShowReservations}} checked{{end}}> Показывать, что забронировано (спойлеры) в админке и в письмах-уведомлениях</label>
     <button class="btn primary">Сохранить</button>
   </form>
 </section>
 
 <section class="panel">
   <h2>Уведомления</h2>
-  <p>Telegram: {{if .TelegramEnabled}}настроен.{{else}}не настроен (TELEGRAM_BOT_TOKEN и TELEGRAM_CHAT_ID в .env).{{end}}</p>
-  {{if .TelegramEnabled}}<form method="post" action="/admin/settings/telegram-test"><button class="btn">Отправить тестовое сообщение</button></form>{{end}}
+  <p>Уведомления о бронях, покупках и отменах: {{if .MailEnabled}}письмом на {{.NotifyTo}}.{{else}}выключены, пока не настроена почта (SMTP_* в .env).{{end}}</p>
   <p>Письма гостям: {{if .MailEnabled}}включены, отправитель {{.MailFrom}}.{{else}}выключены (SMTP_* в .env). Поле email у гостей скрыто.{{end}}</p>
   {{if .MailEnabled}}
   <form method="post" action="/admin/settings/mail-test" class="testmail">

@@ -20,7 +20,6 @@ var adminMessages = map[string]string{
 	"deleted":   "Подарок удалён.",
 	"refreshed": "Данные с сайта обновлены.",
 	"released":  "Брони сняты.",
-	"tg_ok":     "Тестовое сообщение отправлено в Telegram.",
 	"bad_url":   "Нужна ссылка вида https://…",
 }
 
@@ -490,7 +489,7 @@ type settingsPage struct {
 	base
 	Settings        Settings
 	Addresses       []addressForm
-	TelegramEnabled bool
+	NotifyTo        string
 	MailEnabled     bool
 	MailFrom        string
 	BaseURL         string
@@ -499,12 +498,9 @@ type settingsPage struct {
 func (a *App) handleSettingsForm(w http.ResponseWriter, r *http.Request) {
 	p := settingsPage{
 		base:            a.adminBase(r, "Настройки"),
-		TelegramEnabled: a.tg.enabled(),
+		NotifyTo:        notifyTo(a.cfg),
 		MailEnabled:     a.mail.enabled(),
 		BaseURL:         a.cfg.BaseURL,
-	}
-	if e := r.URL.Query().Get("tgerr"); e != "" {
-		p.Error = "Telegram: " + e
 	}
 	if e := r.URL.Query().Get("mailerr"); e != "" {
 		p.Error = "Почта: " + e
@@ -562,16 +558,6 @@ func (a *App) handleSettings(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	redirectMsg(w, r, "/admin/settings", "saved")
-}
-
-func (a *App) handleTelegramTest(w http.ResponseWriter, r *http.Request) {
-	ctx, cancel := context.WithTimeout(r.Context(), 15*time.Second)
-	defer cancel()
-	if err := a.tg.sendSync(ctx, "🎁 Тест: уведомления вишлиста работают."); err != nil {
-		http.Redirect(w, r, "/admin/settings?tgerr="+url.QueryEscape(err.Error()), http.StatusSeeOther)
-		return
-	}
-	redirectMsg(w, r, "/admin/settings", "tg_ok")
 }
 
 // handleMailTest sends one message to the sender's own address: it proves the
