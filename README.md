@@ -13,6 +13,7 @@ The guest-facing site is in Russian and English (picked from the browser, with a
 - A tap anywhere on a card opens the next step; shop links appear only after that.
 - Anonymous reservation: no name or account. The reservation lasts N days (14 by default) unless marked as bought.
 - After reserving: the shipping address as copyable fields (tap a field to copy it, or **Copy All**), the store link, **I bought it** and **Cancel**.
+- Discogs gifts may only be bought in Mint or Near Mint (both Media and Sleeve Condition). The card says so, and the reserve step and reservation page show Discogs' own grade definitions for the release's format (vinyl, CD or cassette); Russian visitors get a translation.
 - Shipping rules shown before reserving: hand it over in person and order to your own address, or ship to the owner. A US store ships to the US address, a store in any other country to the Canadian one. If the gift is tied to one country, only that address is offered.
 - Optional email: a link to the reservation right away and one reminder 3 days before it expires.
 - The browser remembers its own reservations (cookie), so the card says "You're gifting this".
