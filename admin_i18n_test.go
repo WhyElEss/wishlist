@@ -106,3 +106,55 @@ func TestAdminStatusStillValidated(t *testing.T) {
 		}
 	}
 }
+
+func TestNoticeLanguage(t *testing.T) {
+	for _, c := range []struct {
+		lang, event     string
+		spoilers        bool
+		subject, prefix string
+	}{
+		{"ru", "reserved", true, "Вишлист: подарок забронирован", "Забронирован подарок: Gift"},
+		{"en", "reserved", true, "Wishlist: gift reserved", "Gift reserved: Gift"},
+		{"en", "purchased", false, "Wishlist: gift bought", "One of the gifts was marked as bought."},
+		{"en", "cancelled", true, "Wishlist: reservation cancelled", "Reservation cancelled: Gift"},
+		{"ru", "expired", false, "Вишлист: бронь истекла", "Одна бронь истекла"},
+	} {
+		subject, text := noticeText(c.lang, c.event, c.spoilers, "Gift")
+		if subject != c.subject || !strings.HasPrefix(text, c.prefix) {
+			t.Errorf("%s %s: %q / %q", c.lang, c.event, subject, text)
+		}
+		if !c.spoilers && strings.Contains(text, "Gift") {
+			t.Errorf("%s %s names the gift in spoiler-free mode", c.lang, c.event)
+		}
+	}
+	// Every event has its texts in both languages.
+	for _, lang := range []string{"ru", "en"} {
+		for _, event := range []string{"reserved", "purchased", "cancelled", "expired"} {
+			for _, key := range []string{"notice_" + event + "_subj", "notice_" + event, "notice_" + event + "_hidden"} {
+				if _, ok := messages[lang][key]; !ok {
+					t.Errorf("%s lacks %s", lang, key)
+				}
+			}
+		}
+	}
+
+	// Older data without the setting keeps Russian notices; the settings form switches it.
+	srv, app := newTestApp(t)
+	var lang string
+	app.store.view(func(d *Data) { lang = d.Settings.noticeLang() })
+	if lang != "ru" {
+		t.Errorf("default notice language %q", lang)
+	}
+	admin := newClient(t)
+	admin.PostForm(srv.URL+"/admin/login", url.Values{"password": {"admin-password"}})
+	for _, c := range [][2]string{{"en", "en"}, {"bogus", "ru"}} {
+		admin.PostForm(srv.URL+"/admin/settings", url.Values{"reserve_days": {"14"}, "notice_lang": {c[0]}})
+		app.store.view(func(d *Data) { lang = d.Settings.NoticeLang })
+		if lang != c[1] {
+			t.Errorf("notice_lang %q saved as %q", c[0], lang)
+		}
+	}
+	if page := getLang(t, admin, srv.URL+"/admin/settings", "en"); !strings.Contains(page, `<option value="ru" selected>Русский</option>`) {
+		t.Error("settings do not show the saved notice language")
+	}
+}

@@ -119,16 +119,31 @@ func notifyTo(cfg Config) string {
 	return ""
 }
 
-// notify emails the owner about a reservation change, in the background;
-// failures only reach the log. Without mail settings it does nothing.
-func (a *App) notify(subject, text string) {
+// noticeText is the owner's notice about event (reserved, purchased,
+// cancelled, expired). Without spoilers it does not name the gift.
+func noticeText(lang, event string, spoilers bool, title string) (subject, text string) {
+	subject = tf(lang, "notice_subject", tr(lang, "notice_"+event+"_subj"))
+	if spoilers {
+		return subject, tf(lang, "notice_"+event, title)
+	}
+	return subject, tr(lang, "notice_"+event+"_hidden")
+}
+
+// notify emails the owner about a reservation change, in the language chosen
+// in the settings, in the background; failures only reach the log. Without
+// mail settings it does nothing. It takes the store lock: never call it from
+// inside a store callback.
+func (a *App) notify(event string, spoilers bool, title string) {
 	to := notifyTo(a.cfg)
 	if !a.mail.enabled() || to == "" {
 		return
 	}
+	var lang string
+	a.store.view(func(d *Data) { lang = d.Settings.noticeLang() })
+	subject, text := noticeText(lang, event, spoilers, title)
 	body := text + "\n\n" + a.cfg.BaseURL + "/admin\n"
 	go func() {
-		if err := a.mail.send(to, "Вишлист: "+subject, body); err != nil {
+		if err := a.mail.send(to, subject, body); err != nil {
 			log.Printf("owner notice: %v", err)
 		}
 	}()

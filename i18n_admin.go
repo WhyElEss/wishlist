@@ -112,6 +112,22 @@ var adminTexts = [][3]string{
 	{"mail_err_bad_to", "адрес получателя не похож на email", "the recipient does not look like an email address"},
 	{"mail_test_ok", "Сервер %s принял тестовое письмо для %s. Это то же письмо, что гость получает после брони, с примером подарка; ссылка в нём ведёт на главную страницу. Проверьте ящик, в том числе папку «Спам».", "%s accepted the test email for %s. It is the same email a guest gets after reserving, with a sample gift; its link goes to the home page. Check the inbox, including the spam folder."},
 	{"sample_gift", "Пример подарка", "Sample gift"},
+	{"s_notice_lang", "Язык писем-уведомлений", "Language of the notice emails"},
+
+	// Owner's notice emails; the _hidden texts are for spoiler-free mode.
+	{"notice_subject", "Вишлист: %s", "Wishlist: %s"},
+	{"notice_reserved_subj", "подарок забронирован", "gift reserved"},
+	{"notice_reserved", "Забронирован подарок: %s", "Gift reserved: %s"},
+	{"notice_reserved_hidden", "Кто-то забронировал подарок из вашего списка. Какой именно, не показывается: включён режим без спойлеров.", "Someone reserved a gift from your list. Which one is not shown: spoiler-free mode is on."},
+	{"notice_purchased_subj", "подарок куплен", "gift bought"},
+	{"notice_purchased", "Подарок куплен: %s", "Gift bought: %s"},
+	{"notice_purchased_hidden", "Один из подарков отмечен купленным.", "One of the gifts was marked as bought."},
+	{"notice_cancelled_subj", "бронь отменена", "reservation cancelled"},
+	{"notice_cancelled", "Бронь отменена: %s", "Reservation cancelled: %s"},
+	{"notice_cancelled_hidden", "Одну бронь отменили, подарок снова доступен.", "A reservation was cancelled; the gift is available again."},
+	{"notice_expired_subj", "бронь истекла", "reservation expired"},
+	{"notice_expired", "Бронь истекла, подарок снова доступен: %s", "A reservation expired; the gift is available again: %s"},
+	{"notice_expired_hidden", "Одна бронь истекла, подарок снова доступен.", "A reservation expired; the gift is available again."},
 }
 
 func init() {

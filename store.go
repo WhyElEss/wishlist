@@ -39,6 +39,16 @@ type Settings struct {
 	// the admin panel and from the owner's email notices.
 	ShowReservations bool `json:"show_reservations"`
 	ReserveDays      int  `json:"reserve_days"`
+	// NoticeLang is the language of the owner's email notices, "ru" or "en";
+	// "" (files from before the setting) means Russian, as before.
+	NoticeLang string `json:"notice_lang,omitempty"`
+}
+
+func (s Settings) noticeLang() string {
+	if s.NoticeLang == "en" {
+		return "en"
+	}
+	return "ru"
 }
 
 func (s Settings) title(lang string) string {

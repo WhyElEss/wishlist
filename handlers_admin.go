@@ -539,6 +539,10 @@ func (a *App) handleSettings(w http.ResponseWriter, r *http.Request) {
 		AddrCA:           addressFromForm(r, "ca"),
 		ShowReservations: r.FormValue("show_reservations") == "1",
 		ReserveDays:      days,
+		NoticeLang:       r.FormValue("notice_lang"),
+	}
+	if s.NoticeLang != "en" {
+		s.NoticeLang = "ru"
 	}
 	if err := a.store.update(func(d *Data) error {
 		d.Settings = s

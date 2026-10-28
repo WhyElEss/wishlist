@@ -331,11 +331,7 @@ func (a *App) sweep(now time.Time) {
 		return
 	}
 	for _, title := range expired {
-		if spoilers {
-			a.notify("бронь истекла", "Бронь истекла, подарок снова доступен: "+title)
-		} else {
-			a.notify("бронь истекла", "Одна бронь истекла, подарок снова доступен.")
-		}
+		a.notify("expired", spoilers, title)
 	}
 	for _, rm := range reminders {
 		go a.sendReminder(rm)
