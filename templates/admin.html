@@ -15,28 +15,38 @@
   {{if or (eq .SortOrder "price_asc") (eq .SortOrder "price_desc")}}{{t .Lang "sort_price_note"}}{{end}}<br>
   {{if .ShowReservations}}{{t .Lang "spoilers_on"}}{{else}}{{t .Lang "spoilers_off"}}{{end}}
 </p>
+{{/* Two drag lists: ★ "really want" on top, everything else below. Moving a
+     row between them sets or clears ★; any drag switches the order to manual. */}}
+{{$cols := 7}}{{if .ShowReservations}}{{$cols = 8}}{{end}}
 <div class="tablewrap">
-<table class="items"{{if not .SortOrder}} data-sortable="/admin/order"{{end}}>
+<table class="items" data-sortable="/admin/order">
   <thead><tr>
-    {{if not .SortOrder}}<th><span class="sr-only">{{t .Lang "col_order"}}</span></th>{{end}}<th></th><th>{{t .Lang "col_item"}}</th><th>{{t .Lang "col_price"}}</th><th>{{t .Lang "col_address"}}</th><th>{{t .Lang "col_qty"}}</th><th>{{t .Lang "col_status"}}</th>
+    <th><span class="sr-only">{{t .Lang "col_order"}}</span></th><th></th><th>{{t .Lang "col_item"}}</th><th>{{t .Lang "col_price"}}</th><th>{{t .Lang "col_address"}}</th><th>{{t .Lang "col_qty"}}</th><th>{{t .Lang "col_status"}}</th>
     {{if .ShowReservations}}<th>{{t .Lang "col_reservations"}}</th>{{end}}
   </tr></thead>
-  <tbody>
-  {{range .Rows}}
-    <tr class="status-{{.Status}}" data-id="{{.ID}}">
-      {{if not $.SortOrder}}<td class="handle-cell"><button type="button" class="drag" title="{{t $.Lang "drag_title"}}" aria-label="{{tf $.Lang "drag_label" .Title}}">⋮⋮</button></td>{{end}}
-      <td>{{if .Image}}<img class="mini" src="/img/{{.Image}}" alt="">{{end}}</td>
-      <td>{{if .Priority}}★ {{end}}<a href="/admin/items/{{.ID}}">{{.Title}}</a><div class="site">{{.Site}}</div></td>
-      <td>{{.PriceText}}</td>
-      <td>{{.RegionText}}</td>
-      <td>{{.Quantity}}</td>
-      <td>{{.StatusText}}</td>
-      {{if $.ShowReservations}}<td>{{.ReservedText}}</td>{{end}}
-    </tr>
-  {{else}}
-    <tr><td colspan="8" class="empty">{{t .Lang "list_empty"}}</td></tr>
-  {{end}}
+  <tbody data-group="hot">
+    <tr class="group"><th colspan="{{$cols}}">{{t .Lang "group_hot"}}</th></tr>
+    <tr class="drop-empty"><td colspan="{{$cols}}">{{t .Lang "group_hot_empty"}}</td></tr>
+    {{range .HotRows}}{{template "adminrow" (rowCtx $ .)}}{{end}}
+  </tbody>
+  <tbody data-group="rest">
+    <tr class="group"><th colspan="{{$cols}}">{{t .Lang "group_rest"}}</th></tr>
+    {{range .Rows}}{{template "adminrow" (rowCtx $ .)}}{{end}}
+    {{if not (or .Rows .HotRows)}}<tr><td colspan="{{$cols}}" class="empty">{{t .Lang "list_empty"}}</td></tr>{{end}}
   </tbody>
 </table>
 </div>
 {{end}}
+
+{{define "adminrow"}}{{with .Row}}
+    <tr class="status-{{.Status}}" data-id="{{.ID}}">
+      <td class="handle-cell"><button type="button" class="drag" title="{{t $.Page.Lang "drag_title"}}" aria-label="{{tf $.Page.Lang "drag_label" .Title}}">⋮⋮</button></td>
+      <td>{{if .Image}}<img class="mini" src="/img/{{.Image}}" alt="">{{end}}</td>
+      <td><a href="/admin/items/{{.ID}}">{{.Title}}</a><div class="site">{{.Site}}</div></td>
+      <td>{{.PriceText}}</td>
+      <td>{{.RegionText}}</td>
+      <td>{{.Quantity}}</td>
+      <td>{{.StatusText}}</td>
+      {{if $.Page.ShowReservations}}<td>{{.ReservedText}}</td>{{end}}
+    </tr>
+{{end}}{{end}}

@@ -56,27 +56,39 @@ document.addEventListener("click", (e) => {
   }
 });
 
-// Drag rows of a [data-sortable] table by their .drag handle (mouse or touch),
-// or move them with the arrow keys; the new order is posted as ids=a,b,c.
+// Drag rows of the admin list by their .drag handle (mouse or touch), or move
+// them with the arrow keys. The list has two groups (tbody[data-group]): "hot"
+// (★ really want) on top and "rest" below; a row moved between them gets or
+// loses ★. The new order is posted as ids=a,b,c&hot=a; the server also
+// switches the list to manual order, so the page reloads when the sort
+// control or a ★ has to change.
 (function () {
   const table = document.querySelector("table[data-sortable]");
   if (!table) return;
-  const body = table.tBodies[0];
-  const rows = () => [...body.querySelectorAll("tr[data-id]")];
-  let saved = rows().map((r) => r.dataset.id).join(",");
+  const hotBody = table.querySelector('tbody[data-group="hot"]');
+  const restBody = table.querySelector('tbody[data-group="rest"]');
+  const restHead = restBody && restBody.querySelector("tr.group");
+  const rows = () => [...table.querySelectorAll("tr[data-id]")];
+  const hotIds = () => (hotBody ? [...hotBody.querySelectorAll("tr[data-id]")].map((r) => r.dataset.id) : []);
+  const state = () => rows().map((r) => r.dataset.id).join(",") + "|" + hotIds().join(",");
+  let saved = state();
+  const sortSelect = document.getElementById("sort");
 
   function save() {
-    const ids = rows().map((r) => r.dataset.id).join(",");
-    if (ids === saved) return;
+    const now = state();
+    if (now === saved) return;
+    const groupChanged = now.split("|")[1] !== saved.split("|")[1];
+    const wasSorted = sortSelect && sortSelect.value !== "";
     table.classList.add("saving");
     fetch(table.dataset.sortable, {
       method: "POST",
       headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      body: "ids=" + encodeURIComponent(ids),
+      body: "ids=" + encodeURIComponent(now.split("|")[0]) + "&hot=" + encodeURIComponent(now.split("|")[1]),
     }).then((r) => {
       table.classList.remove("saving");
       if (!r.ok) throw new Error(r.status);
-      saved = ids;
+      saved = now;
+      if (groupChanged || wasSorted) location.reload();
     }).catch(() => {
       table.classList.remove("saving");
       table.classList.add("save-failed");
@@ -84,45 +96,87 @@ document.addEventListener("click", (e) => {
     });
   }
 
+  function markTarget(row) {
+    for (const b of [hotBody, restBody]) if (b) b.classList.toggle("drop-here", !!row && row.parentNode === b);
+  }
+
+  // The dragged row follows the pointer (translateY from its place in the
+  // list); the list itself is reordered whenever the pointer crosses the
+  // middle of a neighbour or the line between the two groups.
   let drag = null;
-  body.addEventListener("pointerdown", (e) => {
+  table.addEventListener("pointerdown", (e) => {
     const handle = e.target.closest(".drag");
     if (!handle || e.button > 0) return;
     const row = handle.closest("tr");
     e.preventDefault();
     handle.setPointerCapture(e.pointerId);
-    drag = { row };
+    drag = { row, grab: e.clientY - row.getBoundingClientRect().top };
     row.classList.add("dragging");
+    table.classList.add("is-dragging");
+    markTarget(row);
   });
-  body.addEventListener("pointermove", (e) => {
+  table.addEventListener("pointermove", (e) => {
     if (!drag) return;
     const y = e.clientY;
-    // Move the row past any neighbour whose middle the pointer has crossed.
+    const row = drag.row;
+    const order = () => rows().map((r) => r.dataset.id).join(",") + "|" + row.parentNode.dataset.group;
+    const was = order();
+    const tops = new Map(rows().map((r) => [r, r.getBoundingClientRect().top]));
     for (const other of rows()) {
-      if (other === drag.row) continue;
+      if (other === row) continue;
       const box = other.getBoundingClientRect();
       const mid = box.top + box.height / 2;
-      const below = drag.row.compareDocumentPosition(other) & Node.DOCUMENT_POSITION_FOLLOWING;
-      if (below && y > mid) other.after(drag.row);
-      else if (!below && y < mid) other.before(drag.row);
+      const below = row.compareDocumentPosition(other) & Node.DOCUMENT_POSITION_FOLLOWING;
+      if (below && y > mid) other.after(row);
+      else if (!below && y < mid) other.before(row);
     }
+    if (restHead) {
+      const box = restHead.getBoundingClientRect();
+      const mid = box.top + box.height / 2;
+      if (row.parentNode === hotBody && y > mid && !restHead.nextElementSibling?.matches("tr[data-id]")) restHead.after(row);
+      else if (row.parentNode === restBody && y < mid) hotBody.append(row);
+    }
+    // Neighbours that moved slide from their old place to the new one.
+    if (order() !== was) {
+      for (const [r, oldTop] of tops) {
+        if (r === row) continue;
+        const d = oldTop - r.getBoundingClientRect().top;
+        if (!d) continue;
+        r.style.transition = "none";
+        r.style.transform = "translateY(" + d + "px)";
+        requestAnimationFrame(() => { r.style.transition = ""; r.style.transform = ""; });
+      }
+    }
+    row.style.transform = "";
+    const top = row.getBoundingClientRect().top;
+    row.style.transform = "translateY(" + (y - drag.grab - top) + "px)";
+    markTarget(row);
   });
   const end = () => {
     if (!drag) return;
     drag.row.classList.remove("dragging");
+    drag.row.style.transform = "";
+    table.classList.remove("is-dragging");
+    markTarget(null);
     drag = null;
     save();
   };
-  body.addEventListener("pointerup", end);
-  body.addEventListener("pointercancel", end);
+  table.addEventListener("pointerup", end);
+  table.addEventListener("pointercancel", end);
 
-  body.addEventListener("keydown", (e) => {
+  table.addEventListener("keydown", (e) => {
     const handle = e.target.closest(".drag");
     if (!handle || (e.key !== "ArrowUp" && e.key !== "ArrowDown")) return;
     e.preventDefault();
     const row = handle.closest("tr");
-    if (e.key === "ArrowUp" && row.previousElementSibling) row.previousElementSibling.before(row);
-    if (e.key === "ArrowDown" && row.nextElementSibling) row.nextElementSibling.after(row);
+    const prev = row.previousElementSibling, next = row.nextElementSibling;
+    if (e.key === "ArrowUp") {
+      if (prev && prev.matches("tr[data-id]")) prev.before(row);
+      else if (row.parentNode === restBody && hotBody) hotBody.append(row);
+    } else {
+      if (next && next.matches("tr[data-id]")) next.after(row);
+      else if (row.parentNode === hotBody && restHead) restHead.after(row);
+    }
     handle.focus();
     save();
   });

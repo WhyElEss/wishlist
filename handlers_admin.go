@@ -87,6 +87,7 @@ type adminRow struct {
 
 type adminPage struct {
 	base
+	HotRows          []adminRow // ★ "really want", shown as their own list on top
 	Rows             []adminRow
 	ShowReservations bool
 	SortOrder        string
@@ -123,21 +124,43 @@ func (a *App) handleAdmin(w http.ResponseWriter, r *http.Request) {
 					row.ReservedText += tf(lang, "adm_bought", bought)
 				}
 			}
-			p.Rows = append(p.Rows, row)
+			if it.Priority > 0 {
+				p.HotRows = append(p.HotRows, row)
+			} else {
+				p.Rows = append(p.Rows, row)
+			}
 		}
 	})
 	a.render(w, http.StatusOK, "admin", p)
 }
 
-// handleOrder saves the order the admin dragged the rows into.
+// handleOrder saves the order the admin dragged the rows into. A drag
+// always switches the list to manual order. When hot= is sent (the IDs in
+// the ★ list), the listed gifts get ★ and the other ones in ids lose it.
 func (a *App) handleOrder(w http.ResponseWriter, r *http.Request) {
 	ids := strings.Split(r.FormValue("ids"), ",")
 	if len(ids) == 0 || len(ids) > 1000 {
 		http.Error(w, "bad ids", http.StatusBadRequest)
 		return
 	}
+	_, withHot := r.Form["hot"]
+	hot := map[string]bool{}
+	for _, id := range strings.Split(r.FormValue("hot"), ",") {
+		hot[id] = true
+	}
 	if err := a.store.update(func(d *Data) error {
+		if withHot {
+			for _, id := range ids {
+				if it := d.item(id); it != nil {
+					it.Priority = 0
+					if hot[id] {
+						it.Priority = 1
+					}
+				}
+			}
+		}
 		d.reorder(ids)
+		d.Settings.SortOrder = ""
 		return nil
 	}); err != nil {
 		log.Printf("order: %v", err)

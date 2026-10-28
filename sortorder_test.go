@@ -110,8 +110,11 @@ func TestSortOnSiteAndAdmin(t *testing.T) {
 	if got := order(page); got != "yzabc" {
 		t.Errorf("admin order %q, want yzabc", got)
 	}
-	if strings.Contains(page, "data-sortable") || strings.Contains(page, `class="drag"`) {
-		t.Error("drag ordering still offered while a sort is on")
+	if !strings.Contains(page, "data-sortable") || !strings.Contains(page, `class="drag"`) {
+		t.Error("drag handles hidden while a sort is on")
+	}
+	if strings.Index(page, `data-group="hot"`) > strings.Index(page, "Yankee star") || strings.Index(page, `data-group="rest"`) > strings.Index(page, "Alpha reserved") || strings.Index(page, `data-group="rest"`) < strings.Index(page, "Zulu star") {
+		t.Error("★ gifts are not in the top list and the others in the bottom one")
 	}
 	if !strings.Contains(page, `<option value="title_asc" selected>`) {
 		t.Error("the chosen sort is not selected")
@@ -166,5 +169,47 @@ func TestReadRate(t *testing.T) {
 	}
 	if _, ok := rates["XYZ"]; ok {
 		t.Error("a currency the API does not know got a rate")
+	}
+}
+
+func TestDragOrderSetsStarAndManual(t *testing.T) {
+	srv, app := newTestApp(t)
+	app.store.update(func(d *Data) error {
+		d.Settings.SortOrder = "title_desc"
+		d.Items = []*Item{
+			{ID: "a", Title: "A", Quantity: 1, Status: statusActive, Priority: 1},
+			{ID: "b", Title: "B", Quantity: 1, Status: statusActive},
+			{ID: "c", Title: "C", Quantity: 1, Status: statusActive},
+		}
+		return nil
+	})
+	admin := newClient(t)
+	admin.PostForm(srv.URL+"/admin/login", url.Values{"password": {"admin-password"}})
+	// c dragged into the ★ list above a; a stays there; b stays below.
+	resp, err := admin.PostForm(srv.URL+"/admin/order", url.Values{"ids": {"c,a,b"}, "hot": {"c,a"}})
+	if err != nil || resp.StatusCode != http.StatusNoContent {
+		t.Fatalf("order: %v %v", err, resp.StatusCode)
+	}
+	var got []string
+	var sort string
+	app.store.view(func(d *Data) {
+		sort = d.Settings.SortOrder
+		for _, it := range d.Items {
+			got = append(got, it.ID+strings.Repeat("★", it.Priority))
+		}
+	})
+	if strings.Join(got, " ") != "c★ a★ b" || sort != "" {
+		t.Errorf("after drag: %v, sort %q", got, sort)
+	}
+	// a dragged down into the bottom list loses ★.
+	admin.PostForm(srv.URL+"/admin/order", url.Values{"ids": {"c,b,a"}, "hot": {"c"}})
+	got = nil
+	app.store.view(func(d *Data) {
+		for _, it := range d.Items {
+			got = append(got, it.ID+strings.Repeat("★", it.Priority))
+		}
+	})
+	if strings.Join(got, " ") != "c★ b a" {
+		t.Errorf("after moving a down: %v", got)
 	}
 }

@@ -210,8 +210,25 @@ table.items td.handle-cell { width: 1%; padding-right: 0; }
 }
 .drag:hover { color: var(--text); background: var(--bg); }
 .drag:focus-visible { outline: 2px solid var(--accent); }
-table.items tr.dragging { position: relative; z-index: 1; background: var(--bg); box-shadow: 0 6px 20px rgb(0 0 0 / .25); }
+table.items tr.dragging {
+  position: relative; z-index: 2; background: var(--surface);
+  box-shadow: 0 10px 28px rgb(0 0 0 / .28); outline: 2px solid var(--accent); outline-offset: -2px;
+}
 table.items tr.dragging .drag { cursor: grabbing; color: var(--accent); }
+table.items.is-dragging { cursor: grabbing; user-select: none; }
+/* Rows make room for the dragged one smoothly; the dragged row itself
+   follows the pointer without delay. */
+table.items tr[data-id] { transition: transform .12s; }
+table.items tr.dragging { transition: none; }
+@media (prefers-reduced-motion: reduce) { table.items tr[data-id] { transition: none; } }
+table.items tr.group th {
+  background: var(--bg); color: var(--text); font-size: .85rem; text-transform: none; letter-spacing: 0;
+}
+table.items tbody[data-group="hot"] tr.group th { color: var(--hot); }
+table.items tbody.drop-here tr.group th { box-shadow: inset 4px 0 0 var(--accent); }
+table.items tbody.drop-here tr[data-id]:not(.dragging) { background: color-mix(in srgb, var(--accent) 6%, var(--surface)); }
+table.items tr.drop-empty td { color: var(--muted); font-style: italic; padding: 14px 12px; }
+table.items tbody:has(tr[data-id]) tr.drop-empty { display: none; }
 table.items.saving { opacity: .85; }
 table.items.save-failed { outline: 2px solid var(--danger); }
 

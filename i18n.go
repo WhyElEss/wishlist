@@ -261,6 +261,10 @@ var templateFuncs = template.FuncMap{
 		return formatDate(lang, *t) + ", " + t.Local().Format("15:04")
 	},
 	"fetchnote": fetchNote,
+	// rowCtx passes one admin list row with its page to a sub-template.
+	"rowCtx": func(page adminPage, row adminRow) map[string]any {
+		return map[string]any{"Page": page, "Row": row}
+	},
 	"region": func(lang, code string) string {
 		return tr(lang, "region_"+code)
 	},
