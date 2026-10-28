@@ -15,7 +15,7 @@ The guest-facing site is in Russian and English (picked from the browser, with a
 - After reserving: the shipping address as copyable fields (tap a field to copy it, or **Copy All**), the store link, **I bought it** and **Cancel**.
 - Discogs gifts may only be bought in Mint or Near Mint (both Media and Sleeve Condition). The card says so, and the reserve step and reservation page show Discogs' own grade definitions for the release's format (vinyl, CD or cassette); Russian visitors get a translation.
 - Shipping rules shown before reserving: hand it over in person and order to your own address, or ship to the owner. A US store ships to the US address, a store in any other country to the Canadian one. If the gift is tied to one country, only that address is offered.
-- Optional email: a link to the reservation right away and one reminder 3 days before it expires.
+- Email is required to reserve (the reserve button stays disabled until a valid address is entered): the guest gets the link to the reservation right away and one reminder 3 days before it expires. The reservation page itself does not show the link.
 - The browser remembers its own reservations (cookie), so the card says "You're gifting this".
 
 **For the owner (admin panel)**
@@ -144,7 +144,7 @@ In Cloudflare: **Networking → Tunnels → Create a tunnel**, copy the token, t
 
 ### Email
 
-Guest emails and the owner's notices go out over SMTP with STARTTLS; without `SMTP_HOST` the email field is hidden from guests and no mail is sent. Use a service made for application mail, such as [Resend](https://resend.com): verify the domain there, add the DNS records it gives, and create a sending-only API key.
+Guest emails and the owner's notices go out over SMTP with STARTTLS. Without `SMTP_HOST` the email field is hidden from guests, reservations work without it, and no mail is sent. Use a service made for application mail, such as [Resend](https://resend.com): verify the domain there, add the DNS records it gives, and create a sending-only API key.
 
 ```
 SMTP_HOST=smtp.resend.com
