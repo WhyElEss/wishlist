@@ -77,7 +77,7 @@ Images are downloaded once and served from the app, so cards do not depend on th
 | `i18n.go` | Russian and English texts, price and date formatting |
 | `templates/`, `static/` | HTML templates, CSS, a small script for copying, tabs and drag ordering; embedded into the binary |
 
-Data lives in `wishlist.json` in the data volume. The gift list is in display order; reservations sit inside each gift with their secret token, optional email and expiry. A reservation is made under the store lock, so two guests can never take the same last unit.
+Data lives in `wishlist.json` in the data volume. The gift list is in display order; reservations sit inside each gift with their secret token, the guest's email (kept until the gift is marked as bought) and expiry. A reservation is made under the store lock, so two guests can never take the same last unit.
 
 ## Running on a server
 
