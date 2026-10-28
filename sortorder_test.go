@@ -125,12 +125,18 @@ func TestSortOnSiteAndAdmin(t *testing.T) {
 		t.Errorf("settings form reset the sort to %q", got)
 	}
 
-	// Back to manual: stored order and drag handles.
+	// Back to manual: the list stays as it was last shown, now draggable.
 	admin.PostForm(srv.URL+"/admin/sort", url.Values{"sort": {""}})
 	resp, _ = admin.Get(srv.URL + "/admin")
 	page = body(t, resp)
-	if got := order(page); got != "cazby" || !strings.Contains(page, "data-sortable") {
-		t.Errorf("manual admin order %q or no drag handles", got)
+	if got := order(page); got != "yzabc" || !strings.Contains(page, "data-sortable") {
+		t.Errorf("manual admin order %q (want yzabc, the last sorted order) or no drag handles", got)
+	}
+	// Choosing manual again changes nothing.
+	admin.PostForm(srv.URL+"/admin/sort", url.Values{"sort": {""}})
+	resp, _ = admin.Get(srv.URL + "/admin")
+	if got := order(body(t, resp)); got != "yzabc" {
+		t.Errorf("manual → manual reordered the list: %q", got)
 	}
 }
 

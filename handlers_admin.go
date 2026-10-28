@@ -106,13 +106,7 @@ func (a *App) handleAdmin(w http.ResponseWriter, r *http.Request) {
 	a.store.view(func(d *Data) {
 		p.ShowReservations = d.Settings.ShowReservations
 		p.SortOrder, p.SortOrders = d.Settings.SortOrder, sortOrders
-		items := sortedItems(d.Items, d.Settings.SortOrder, d.Rates)
-		if p.SortOrder != "" {
-			// ★ on top as on the site. Reserved gifts are not moved here: that
-			// would give them away in spoiler-free mode.
-			slices.SortStableFunc(items, func(a, b *Item) int { return b.Priority - a.Priority })
-		}
-		for _, it := range items {
+		for _, it := range adminOrder(d) {
 			row := adminRow{
 				ID: it.ID, Title: it.Title, Image: it.Image,
 				PriceText:  itemPrice(it, lang),
@@ -153,7 +147,20 @@ func (a *App) handleOrder(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
+// adminOrder is the gift list as the admin panel shows it. With a sort on,
+// ★ gifts come first, as on the site; reserved gifts are not moved, since
+// that would give them away in spoiler-free mode.
+func adminOrder(d *Data) []*Item {
+	items := sortedItems(d.Items, d.Settings.SortOrder, d.Rates)
+	if d.Settings.SortOrder != "" {
+		slices.SortStableFunc(items, func(a, b *Item) int { return b.Priority - a.Priority })
+	}
+	return items
+}
+
 // handleSort switches the gift list between the drag order and a sort.
+// Going back to the drag order keeps the list as it was last shown, so
+// dragging starts from the sorted order rather than the old one.
 func (a *App) handleSort(w http.ResponseWriter, r *http.Request) {
 	order := r.FormValue("sort")
 	if !validSortOrder(order) {
@@ -161,6 +168,9 @@ func (a *App) handleSort(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if err := a.store.update(func(d *Data) error {
+		if order == "" && d.Settings.SortOrder != "" {
+			d.Items = adminOrder(d)
+		}
 		d.Settings.SortOrder = order
 		return nil
 	}); err != nil {
