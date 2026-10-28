@@ -133,7 +133,7 @@ document.addEventListener("click", (e) => {
     if (restHead) {
       const box = restHead.getBoundingClientRect();
       const mid = box.top + box.height / 2;
-      if (row.parentNode === hotBody && y > mid && !restHead.nextElementSibling?.matches("tr[data-id]")) restHead.after(row);
+      if (row.parentNode === hotBody && y > mid) restHead.after(row);
       else if (row.parentNode === restBody && y < mid) hotBody.append(row);
     }
     // Neighbours that moved slide from their old place to the new one.
