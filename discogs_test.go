@@ -163,6 +163,11 @@ func TestDiscogsConditionBlock(t *testing.T) {
 	if strings.Contains(page, gradings["en"][formatVinyl].MediaNM) {
 		t.Error("Russian page shows the English original")
 	}
+	// The definitions sit in a block that stays closed until the guest opens it.
+	if !strings.Contains(page, "<details>\n  <summary>Что значат Mint и Near Mint</summary>") ||
+		strings.Index(page, "<details>") > strings.Index(page, gradings["ru"][formatVinyl].MediaNM) {
+		t.Error("grade definitions are not inside a closed <details> block")
+	}
 	if page := get("/item/dg", "en"); !strings.Contains(page, gradings["en"][formatVinyl].SleeveNM) {
 		t.Error("English page lacks the Discogs original text")
 	}

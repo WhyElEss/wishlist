@@ -233,4 +233,6 @@ table.items.save-failed { outline: 2px solid var(--danger); }
 .grading dt { font-weight: 600; }
 .grading dd { margin: 0 0 4px; }
 .grading p { margin: 0 0 6px; }
+.grading summary { cursor: pointer; color: var(--accent); font-weight: 600; }
+.grading details[open] summary { margin-bottom: 4px; }
 .btn:disabled { opacity: .45; cursor: not-allowed; filter: none; }

@@ -2,6 +2,9 @@
 <div class="grading">
   <h3>{{t .Lang "cond_title"}}</h3>
   <p>{{t .Lang "cond_intro"}}</p>
+  {{/* The definitions are long: closed until the guest asks for them. */}}
+  <details>
+  <summary>{{t .Lang "cond_details"}}</summary>
   <h4>Media Condition <span class="hint">— {{t .Lang "cond_media"}}</span></h4>
   <dl>
     <dt>Mint (M)</dt><dd>{{.Card.Grading.MediaMint}}</dd>
@@ -13,5 +16,6 @@
     <dt>Near Mint (NM {{t .Lang "cond_or"}} M-)</dt><dd>{{.Card.Grading.SleeveNM}}</dd>
   </dl>
   <p class="hint">{{t .Lang "cond_source"}}</p>
+  </details>
 </div>
 {{end}}
