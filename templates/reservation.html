@@ -48,12 +48,20 @@
   </div>
   {{end}}
 
-  {{if or .Emailed (not .Purchased)}}
   <div class="savelink">
-    {{if .Emailed}}<p><strong>{{t .Lang "res_link_emailed"}}</strong></p>{{end}}
+    {{if .Emailed}}
+    <p><strong>{{t .Lang "res_link_emailed"}}</strong></p>
+    {{else}}
+    {{/* The link did not go out by mail (mail off, or an older reservation):
+         this page is the only place the guest can get it. */}}
+    <p>{{t .Lang "res_save_link"}}</p>
+    <div class="linkbox">
+      <code id="reslink">{{.SelfURL}}</code>
+      <button type="button" class="btn small" data-copy="reslink" data-copied="{{t .Lang "copied"}}">{{t .Lang "copy"}}</button>
+    </div>
+    {{end}}
     {{if not .Purchased}}<p class="hint">{{tf .Lang "res_expires" (date .Lang .ExpiresAt)}}</p>{{end}}
   </div>
-  {{end}}
 
   <div class="actions">
     {{if not .Purchased}}

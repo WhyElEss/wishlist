@@ -192,3 +192,21 @@ func TestEmailRequired(t *testing.T) {
 		t.Error("after purchase: the emailed note is gone or a link box came back")
 	}
 }
+
+// Without mail settings there is no email field; the page must then give the
+// guest the link, since nothing else will.
+func TestLinkShownWithoutMail(t *testing.T) {
+	srv, app := newTestApp(t)
+	app.store.update(func(d *Data) error {
+		d.Items = []*Item{{ID: "a", URL: "https://shop.example/a", Title: "A", Quantity: 1, Status: statusActive}}
+		return nil
+	})
+	resp, err := newClient(t).PostForm(srv.URL+"/item/a/reserve", url.Values{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	page := body(t, resp)
+	if !strings.Contains(page, `id="reslink"`) || !strings.Contains(page, "Save this link") || !strings.Contains(page, resp.Request.URL.Path) {
+		t.Error("without mail the reservation page must show the link to save")
+	}
+}

@@ -288,6 +288,7 @@ type reservationPage struct {
 	Card      cardView
 	Token     string
 	ExpiresAt time.Time
+	SelfURL   string
 	Purchased bool
 	Emailed   bool
 
@@ -347,6 +348,7 @@ func (a *App) handleReservation(w http.ResponseWriter, r *http.Request) {
 	}
 	p.base = a.base(r, lang, tr(lang, "res_title"))
 	p.Token = token
+	p.SelfURL = a.origin(r) + "/r/" + token
 	if r.URL.Query().Get("m") == "purchased" {
 		p.Flash = tr(lang, "purchased_done")
 	}
