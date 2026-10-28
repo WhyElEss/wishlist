@@ -26,7 +26,7 @@ The site and the admin panel are in Russian and English (picked from the browser
 - Spoiler-free mode (default): the admin panel and the owner's notices do not reveal what was reserved.
 - Prices are re-read daily at 06:00 (container time zone), and one minute after start when the last check is more than a day old. A price is only replaced by a price actually read from the shop; manual prices for shops that cannot be read stay as they are.
 - When Amazon has no offer of its own for an item ("See All Buying Options" only, or "Currently unavailable"), guests see "Temporarily unavailable in store" instead of a price until the daily check reads a price again.
-- Email notices to the owner about reservations, purchases, cancellations and expiries.
+- Email notices to the owner about reservations, purchases, cancellations and expiries, in Russian or English (a setting; Russian by default).
 - Shipping addresses for the US and Canada are edited in the settings as separate fields (name, two address lines, city, province or state, postal code, country). They are stored in the data volume, not in the repository.
 
 **Site**
