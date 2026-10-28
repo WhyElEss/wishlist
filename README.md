@@ -4,7 +4,7 @@ A self-hosted gift wishlist with anonymous reservations. One Go binary built onl
 
 The owner adds links to any online shop; guests see cards with a picture, price and store, pick a gift without signing up, and the card turns grey for everyone else. After reserving, the guest gets the shipping address to use and a private link to mark the gift as bought or cancel.
 
-The guest-facing site is in Russian and English (picked from the browser, with a switch); Russian counts use the Unicode CLDR plural forms (1 день, 2 дня, 5 дней). The admin panel is in Russian.
+The site and the admin panel are in Russian and English (picked from the browser, with a switch); Russian counts use the Unicode CLDR plural forms (1 день, 2 дня, 5 дней).
 
 ## Features
 
@@ -15,7 +15,7 @@ The guest-facing site is in Russian and English (picked from the browser, with a
 - After reserving: the shipping address as copyable fields (tap a field to copy it, or **Copy All**), the store link, **I bought it** and **Cancel**.
 - Discogs gifts may only be bought in Mint or Near Mint (both Media and Sleeve Condition). The card says so, and the reserve step and reservation page show Discogs' own grade definitions for the release's format (vinyl, CD or cassette); Russian visitors get a translation.
 - Shipping rules shown before reserving: hand it over in person and order to your own address, or ship to the owner. A US store ships to the US address, a store in any other country to the Canadian one. If the gift is tied to one country, only that address is offered.
-- Email is required to reserve (the reserve button stays disabled until a valid address is entered): the guest gets the link to the reservation right away and one reminder 3 days before it expires. The reservation page itself does not show the link.
+- Email is required to reserve (the reserve button stays disabled until a valid address is entered): the guest gets the link to the reservation right away and one reminder 3 days before it expires. The reservation page shows the link to copy only when it was not emailed (mail turned off, or a reservation from before email was required).
 - The browser remembers its own reservations (cookie), so the card says "You're gifting this".
 
 **For the owner (admin panel)**
@@ -74,7 +74,8 @@ Images are downloaded once and served from the app, so cards do not depend on th
 | `notify.go` | SMTP client (STARTTLS only), owner notices |
 | `auth.go` | PBKDF2 password hash, HMAC-signed admin session cookie |
 | `ratelimit.go` | Per-IP limits, client IP and country from Cloudflare headers |
-| `i18n.go` | Russian and English texts, price and date formatting |
+| `i18n.go` | Russian and English texts of the public site, price and date formatting |
+| `i18n_admin.go` | Russian and English texts of the admin panel; notes on what a shop page could not fill in |
 | `templates/`, `static/` | HTML templates, CSS, a small script for copying, tabs and drag ordering; embedded into the binary |
 
 Data lives in `wishlist.json` in the data volume. The gift list is in display order; reservations sit inside each gift with their secret token, the guest's email (kept until the gift is marked as bought) and expiry. A reservation is made under the store lock, so two guests can never take the same last unit.
@@ -144,7 +145,7 @@ In Cloudflare: **Networking → Tunnels → Create a tunnel**, copy the token, t
 
 ### Email
 
-Guest emails and the owner's notices go out over SMTP with STARTTLS. Without `SMTP_HOST` the email field is hidden from guests, reservations work without it, and no mail is sent. Use a service made for application mail, such as [Resend](https://resend.com): verify the domain there, add the DNS records it gives, and create a sending-only API key.
+Guest emails and the owner's notices go out over SMTP with STARTTLS. Without `SMTP_HOST` the email field is hidden from guests, reservations work without it (the reservation page then shows its own link to copy), and no mail is sent. Use a service made for application mail, such as [Resend](https://resend.com): verify the domain there, add the DNS records it gives, and create a sending-only API key.
 
 ```
 SMTP_HOST=smtp.resend.com
@@ -156,7 +157,7 @@ SMTP_FROM=Wishlist <wishlist@example.com>
 
 A personal iCloud Mail account is not a good fit: messages sent through `smtp.mail.me.com` from an app reached Apple addresses but were rejected for Gmail with `550 5.7.1 [CS101] Message rejected due to local policy`.
 
-**Settings → Send test email** sends the real reservation email (with a sample gift) to an address you type in.
+**Settings → Send test email** sends the real reservation email (with a sample gift, in the admin panel's current language) to an address you type in.
 
 ## Configuration
 
