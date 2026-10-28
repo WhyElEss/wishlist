@@ -21,7 +21,9 @@ The site and the admin panel are in Russian and English (picked from the browser
 **For the owner (admin panel)**
 
 - Add a gift by pasting a link; title, picture and price are read from the page.
-- Reorder gifts by dragging rows (mouse, touch or arrow keys). Gifts marked ★ **Really want** float above the manual order and get a red frame; reserved gifts go to the end.
+- The gift list in the admin panel has two parts: ★ **Really want** on top and everything else below. On the site the same order holds, ★ gifts get a red frame, and reserved gifts go to the end.
+- Order of the list: manual, or sorted by date added, title (Latin titles first, then Cyrillic) or price, each ascending or descending. Prices in other currencies are compared in Canadian dollars at the Bank of Canada daily average rate (Valet API, read at start and before the daily price check); gifts without a price or temporarily unavailable go last.
+- Rows can always be dragged (mouse, touch or arrow keys). A drag switches the list to manual order, keeping the current order plus the change; moving a row between the two parts sets or clears ★.
 - Per-gift quantity, notes, status (active / received / already have) and shipping region (auto / US only / Canada only).
 - Spoiler-free mode (default): the admin panel and the owner's notices do not reveal what was reserved.
 - Prices are re-read daily at 06:00 (container time zone), and one minute after start when the last check is more than a day old. A price is only replaced by a price actually read from the shop; manual prices for shops that cannot be read stay as they are.
@@ -54,6 +56,7 @@ Images are downloaded once and served from the app, so cards do not depend on th
  guests ──https──▶ Cloudflare ──tunnel──▶ cloudflared ──http://wishlist:8095──▶ wishlist (Go)
                                                                                     │
                                      shops, api.discogs.com ◀───────────────────────┤
+                                     www.bankofcanada.ca (rates) ◀──────────────────┤
                                      smtp.resend.com:587 (STARTTLS) ◀───────────────┤
                                                                                     ▼
                                                               /data: wishlist.json, session.key, images/
@@ -71,6 +74,7 @@ Images are downloaded once and served from the app, so cards do not depend on th
 | `amazon.go` | amazon.com session with a US ZIP; amazon.ca; shop dispatch |
 | `discogs.go` | Discogs API reader |
 | `prices.go` | Daily price check |
+| `sortorder.go` | Sort orders of the gift list, Bank of Canada exchange rates |
 | `notify.go` | SMTP client (STARTTLS only), owner notices |
 | `auth.go` | PBKDF2 password hash, HMAC-signed admin session cookie |
 | `ratelimit.go` | Per-IP limits, client IP and country from Cloudflare headers |
