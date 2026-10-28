@@ -23,10 +23,10 @@
       <li>{{t .Lang "ship_rule_fixed"}}</li>
     </ul>
   </div>
-  <form method="post" action="/item/{{.Card.ID}}/reserve" class="form">
+  <form method="post" action="/item/{{.Card.ID}}/reserve" class="form"{{if .EmailEnabled}} data-require-email{{end}}>
     {{if .EmailEnabled}}
       <label class="email-field">{{t .Lang "email_label"}}
-        <input type="email" name="email" autocomplete="email" maxlength="254" placeholder="name@example.com">
+        <input type="email" name="email" autocomplete="email" maxlength="254" placeholder="name@example.com" required>
       </label>
       <small class="hint">{{t .Lang "email_hint"}}</small>
     {{end}}

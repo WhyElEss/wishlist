@@ -214,15 +214,20 @@ func (a *App) handleReserve(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var email string
+	// With mail configured the email is required: the reservation link only
+	// reaches the guest by mail.
 	if a.mail.enabled() {
-		if e := strings.TrimSpace(r.FormValue("email")); e != "" {
-			addr, err := mail.ParseAddress(e)
-			if err != nil || len(addr.Address) > 254 {
-				a.renderMessage(w, r, http.StatusBadRequest, tr(lang, "bad_email"))
-				return
-			}
-			email = addr.Address
+		e := strings.TrimSpace(r.FormValue("email"))
+		if e == "" {
+			a.renderMessage(w, r, http.StatusBadRequest, tr(lang, "email_required"))
+			return
 		}
+		addr, err := mail.ParseAddress(e)
+		if err != nil || len(addr.Address) > 254 {
+			a.renderMessage(w, r, http.StatusBadRequest, tr(lang, "bad_email"))
+			return
+		}
+		email = addr.Address
 	}
 
 	now := time.Now()
@@ -282,13 +287,9 @@ type reservationPage struct {
 	base
 	Card      cardView
 	Token     string
-	SelfURL   string
 	ExpiresAt time.Time
 	Purchased bool
 	Emailed   bool
-
-	// MailOn: guests were offered the email field, so "no email" was a choice.
-	MailOn bool
 
 	Regions []regionView
 
@@ -346,8 +347,6 @@ func (a *App) handleReservation(w http.ResponseWriter, r *http.Request) {
 	}
 	p.base = a.base(r, lang, tr(lang, "res_title"))
 	p.Token = token
-	p.SelfURL = a.origin(r) + "/r/" + token
-	p.MailOn = a.mail.enabled()
 	if r.URL.Query().Get("m") == "purchased" {
 		p.Flash = tr(lang, "purchased_done")
 	}

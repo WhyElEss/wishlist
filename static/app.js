@@ -127,3 +127,15 @@ document.addEventListener("click", (e) => {
     save();
   });
 })();
+
+// The reserve button stays disabled until the required email looks valid.
+// Only script turns it off, so without JavaScript the browser's own
+// "required" check still applies.
+document.querySelectorAll("form[data-require-email]").forEach((form) => {
+  const input = form.querySelector('input[name="email"]');
+  const button = form.querySelector("button");
+  if (!input || !button) return;
+  const update = () => { button.disabled = !(input.value.trim() && input.checkValidity()); };
+  input.addEventListener("input", update);
+  update();
+});

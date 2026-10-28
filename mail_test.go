@@ -150,38 +150,45 @@ func TestNotifyTo(t *testing.T) {
 	}
 }
 
-func TestSaveLinkBlock(t *testing.T) {
+func TestEmailRequired(t *testing.T) {
 	srv, app := newTestApp(t)
 	app.cfg.SMTPFrom = "Wishlist <wishlist@example.com>"
 	app.mail = &mailer{host: "127.0.0.1", port: "1", from: app.cfg.SMTPFrom} // nothing listens: sending fails quietly
 	app.store.update(func(d *Data) error {
-		d.Items = []*Item{
-			{ID: "a", URL: "https://shop.example/a", Title: "A", Quantity: 1, Status: statusActive},
-			{ID: "b", URL: "https://shop.example/b", Title: "B", Quantity: 1, Status: statusActive},
-		}
+		d.Items = []*Item{{ID: "a", URL: "https://shop.example/a", Title: "A", Quantity: 1, Status: statusActive}}
 		return nil
 	})
-	reserve := func(id, email string) (*http.Client, string, string) {
-		c := newClient(t)
-		resp, err := c.PostForm(srv.URL+"/item/"+id+"/reserve", url.Values{"email": {email}})
-		if err != nil {
-			t.Fatal(err)
+
+	resp, _ := http.Get(srv.URL + "/item/a")
+	page := body(t, resp)
+	if !strings.Contains(page, "data-require-email") || !strings.Contains(page, `placeholder="name@example.com" required`) {
+		t.Error("the email field is not marked as required")
+	}
+
+	c := newClient(t)
+	resp, err := c.PostForm(srv.URL+"/item/a/reserve", url.Values{"email": {""}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	page = body(t, resp)
+	if resp.StatusCode != http.StatusBadRequest || !strings.Contains(page, "Please enter your email") {
+		t.Errorf("reserve without email: %d", resp.StatusCode)
+	}
+	app.store.view(func(d *Data) {
+		if len(d.Items[0].Reservations) != 0 {
+			t.Error("a reservation was made without an email")
 		}
-		return c, resp.Request.URL.Path, body(t, resp)
-	}
+	})
 
-	c, path, page := reserve("a", "guest@example.com")
+	resp, _ = c.PostForm(srv.URL+"/item/a/reserve", url.Values{"email": {"guest@example.com"}})
+	path := resp.Request.URL.Path
+	page = body(t, resp)
 	if strings.Contains(page, `id="reslink"`) || !strings.Contains(page, "We have emailed you this link") {
-		t.Error("with email: the save-link block should be hidden and the emailed note shown")
+		t.Error("with email: the page should only say the link was emailed")
 	}
-	// After "I bought it" the stored email is cleared; the block must stay hidden.
-	resp, _ := c.PostForm(srv.URL+path+"/purchased", url.Values{})
-	if page := body(t, resp); strings.Contains(page, `id="reslink"`) {
-		t.Error("with email, after purchase: the save-link block came back")
-	}
-
-	_, _, page = reserve("b", "")
-	if !strings.Contains(page, `id="reslink"`) || !strings.Contains(page, "You did not leave an email") {
-		t.Error("without email: the save-link block should explain why it is shown")
+	// After "I bought it" the stored email is cleared; the note must stay.
+	resp, _ = c.PostForm(srv.URL+path+"/purchased", url.Values{})
+	if page := body(t, resp); strings.Contains(page, `id="reslink"`) || !strings.Contains(page, "We have emailed you this link") {
+		t.Error("after purchase: the emailed note is gone or a link box came back")
 	}
 }
