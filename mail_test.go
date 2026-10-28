@@ -87,16 +87,16 @@ func TestMailUI(t *testing.T) {
 	if !strings.Contains(page, `action="/admin/settings/mail-test"`) || !strings.Contains(page, `name="to"`) {
 		t.Error("settings lack the test-mail form with a recipient field")
 	}
-	if !strings.Contains(page, "письмом на wishlist@example.com") || strings.Contains(page, "Telegram") {
+	if !strings.Contains(page, "by email to wishlist@example.com") || strings.Contains(page, "Telegram") {
 		t.Error("settings do not say where owner notices go, or still mention Telegram")
 	}
 	// Nothing listens on the configured port: the error must name the problem, not claim success.
 	resp, _ = admin.PostForm(srv.URL+"/admin/settings/mail-test", url.Values{"to": {"me@example.com"}})
-	if page := body(t, resp); !strings.Contains(page, "Почта: ") || strings.Contains(page, "принял тестовое письмо") {
+	if page := body(t, resp); !strings.Contains(page, "Mail: ") || strings.Contains(page, "accepted the test email") {
 		t.Error("failed test mail not reported as a failure")
 	}
 	resp, _ = admin.PostForm(srv.URL+"/admin/settings/mail-test", url.Values{"to": {"not an address"}})
-	if page := body(t, resp); !strings.Contains(page, "адрес получателя не похож на email") {
+	if page := body(t, resp); !strings.Contains(page, "the recipient does not look like an email address") {
 		t.Error("bad recipient not reported")
 	}
 }

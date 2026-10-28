@@ -151,7 +151,11 @@ type Item struct {
 	Priority  int    `json:"priority,omitempty"`
 	Quantity  int    `json:"quantity"`
 	Status    string `json:"status"`
-	FetchNote string `json:"fetch_note,omitempty"`
+	FetchNote string `json:"fetch_note,omitempty"` // Russian-only text from older versions; Fetch replaces it
+
+	// Fetch is what reading the shop's page could not fill in; the edit form
+	// explains it in the admin's language.
+	Fetch *FetchInfo `json:"fetch,omitempty"`
 
 	// PriceCheckedAt is when a price was last read from the shop's page.
 	PriceCheckedAt *time.Time `json:"price_checked_at,omitempty"`

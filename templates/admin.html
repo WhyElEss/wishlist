@@ -1,22 +1,22 @@
 {{define "content"}}
 <form method="post" action="/admin/items" class="addform">
-  <input type="url" name="url" placeholder="Ссылка на товар: Amazon или любой другой магазин" required>
-  <button class="btn primary">Добавить</button>
+  <input type="url" name="url" placeholder="{{t .Lang "add_placeholder"}}" required>
+  <button class="btn primary">{{t .Lang "add_button"}}</button>
 </form>
 <p class="hint">
-  Гости видят подарки в том же порядке, что здесь, но подарки с ★ поднимаются над остальными, а забронированные уходят в конец. Чтобы поменять порядок, перетащите строку за ⋮⋮.<br>
-  {{if .ShowReservations}}Брони видны: режим со спойлерами.{{else}}Режим без спойлеров: брони скрыты здесь и в письмах-уведомлениях. Переключается в настройках.{{end}}
+  {{t .Lang "list_order_hint"}}<br>
+  {{if .ShowReservations}}{{t .Lang "spoilers_on"}}{{else}}{{t .Lang "spoilers_off"}}{{end}}
 </p>
 <div class="tablewrap">
 <table class="items" data-sortable="/admin/order">
   <thead><tr>
-    <th><span class="sr-only">Порядок</span></th><th></th><th>Товар</th><th>Цена</th><th>Адрес</th><th>Шт.</th><th>Статус</th>
-    {{if .ShowReservations}}<th>Брони</th>{{end}}
+    <th><span class="sr-only">{{t .Lang "col_order"}}</span></th><th></th><th>{{t .Lang "col_item"}}</th><th>{{t .Lang "col_price"}}</th><th>{{t .Lang "col_address"}}</th><th>{{t .Lang "col_qty"}}</th><th>{{t .Lang "col_status"}}</th>
+    {{if .ShowReservations}}<th>{{t .Lang "col_reservations"}}</th>{{end}}
   </tr></thead>
   <tbody>
   {{range .Rows}}
     <tr class="status-{{.Status}}" data-id="{{.ID}}">
-      <td class="handle-cell"><button type="button" class="drag" title="Перетащите, чтобы поменять порядок (или стрелки ↑↓)" aria-label="Переместить: {{.Title}}">⋮⋮</button></td>
+      <td class="handle-cell"><button type="button" class="drag" title="{{t $.Lang "drag_title"}}" aria-label="{{tf $.Lang "drag_label" .Title}}">⋮⋮</button></td>
       <td>{{if .Image}}<img class="mini" src="/img/{{.Image}}" alt="">{{end}}</td>
       <td>{{if .Priority}}★ {{end}}<a href="/admin/items/{{.ID}}">{{.Title}}</a><div class="site">{{.Site}}</div></td>
       <td>{{.PriceText}}</td>
@@ -26,7 +26,7 @@
       {{if $.ShowReservations}}<td>{{.ReservedText}}</td>{{end}}
     </tr>
   {{else}}
-    <tr><td colspan="8" class="empty">Пока пусто: вставьте первую ссылку выше.</td></tr>
+    <tr><td colspan="8" class="empty">{{t .Lang "list_empty"}}</td></tr>
   {{end}}
   </tbody>
 </table>

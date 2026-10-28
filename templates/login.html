@@ -1,9 +1,9 @@
 {{define "content"}}
 <section class="panel narrow">
-  <h1>Вход в админку</h1>
+  <h1>{{t .Lang "login_title"}}</h1>
   <form method="post" action="/admin/login" class="form">
-    <label>Пароль<input type="password" name="password" autocomplete="current-password" required autofocus></label>
-    <button class="btn primary">Войти</button>
+    <label>{{t .Lang "login_password"}}<input type="password" name="password" autocomplete="current-password" required autofocus></label>
+    <button class="btn primary">{{t .Lang "login_submit"}}</button>
   </form>
 </section>
 {{end}}

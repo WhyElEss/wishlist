@@ -34,16 +34,17 @@
 <header class="top">
   <div class="wrap">
     <a class="brand" href="{{if .Admin}}/admin{{else}}/{{end}}">🎁 {{.SiteTitle}}</a>
-    {{if not .NoNav}}<nav>
-      {{if .Admin}}
-        <a href="/admin">Подарки</a>
-        <a href="/admin/settings">Настройки</a>
-        <a href="/" target="_blank">Сайт ↗</a>
-        <form method="post" action="/admin/logout" class="inline"><button class="link">Выйти</button></form>
-      {{else}}
-        <a href="/lang/{{if eq .Lang "ru"}}en{{else}}ru{{end}}?next={{.Path}}">{{t .Lang "lang_switch"}}</a>
+    <nav>
+      {{if and .Admin (not .NoNav)}}
+        <a href="/admin">{{t .Lang "nav_gifts"}}</a>
+        <a href="/admin/settings">{{t .Lang "nav_settings"}}</a>
+        <a href="/" target="_blank">{{t .Lang "nav_site"}}</a>
       {{end}}
-    </nav>{{end}}
+        <a href="/lang/{{if eq .Lang "ru"}}en{{else}}ru{{end}}?next={{.Path}}">{{t .Lang "lang_switch"}}</a>
+      {{if and .Admin (not .NoNav)}}
+        <form method="post" action="/admin/logout" class="inline"><button class="link">{{t .Lang "nav_logout"}}</button></form>
+      {{end}}
+    </nav>
   </div>
 </header>
 <main class="wrap">

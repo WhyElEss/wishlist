@@ -252,12 +252,13 @@ var templateFuncs = template.FuncMap{
 	"tf":   tf,
 	"date": formatDate,
 	"days": days,
-	"datetime": func(t *time.Time) string {
+	"datetime": func(lang string, t *time.Time) string {
 		if t == nil {
 			return ""
 		}
-		return formatDate("ru", *t) + ", " + t.Local().Format("15:04")
+		return formatDate(lang, *t) + ", " + t.Local().Format("15:04")
 	},
+	"fetchnote": fetchNote,
 	"region": func(lang, code string) string {
 		return tr(lang, "region_"+code)
 	},

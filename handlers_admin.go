@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"errors"
-	"fmt"
 	"log"
 	"net/http"
 	"net/mail"
@@ -15,25 +14,18 @@ import (
 	"time"
 )
 
-var adminMessages = map[string]string{
-	"saved":     "Сохранено.",
-	"deleted":   "Подарок удалён.",
-	"refreshed": "Данные с сайта обновлены.",
-	"released":  "Брони сняты.",
-	"bad_url":   "Нужна ссылка вида https://…",
-}
+var validStatus = map[string]bool{statusActive: true, statusReceived: true, statusOwned: true}
 
-var statusNames = map[string]string{
-	statusActive:   "Активен",
-	statusReceived: "Получен",
-	statusOwned:    "Уже есть",
-}
-
-func (a *App) adminBase(r *http.Request, title string) base {
-	b := a.base(r, "ru", title)
+// adminBase is the page frame in the admin's language; titleKey is a message key.
+func (a *App) adminBase(r *http.Request, titleKey string) base {
+	lang := detectLang(r)
+	b := a.base(r, lang, tr(lang, titleKey))
 	b.Admin = true
-	if m := adminMessages[r.URL.Query().Get("m")]; m != "" {
-		b.Flash = m
+	// ?m= names one of the msg_* texts after a redirect.
+	if m := r.URL.Query().Get("m"); m != "" {
+		if _, ok := messages["en"]["msg_"+m]; ok {
+			b.Flash = tr(lang, "msg_"+m)
+		}
 	}
 	return b
 }
@@ -47,7 +39,7 @@ func redirectMsg(w http.ResponseWriter, r *http.Request, path, msg string) {
 type loginPage struct{ base }
 
 func (a *App) loginBase(r *http.Request) base {
-	b := a.adminBase(r, "Вход")
+	b := a.adminBase(r, "login_page")
 	b.NoNav = true
 	return b
 }
@@ -63,12 +55,12 @@ func (a *App) handleLoginForm(w http.ResponseWriter, r *http.Request) {
 func (a *App) handleLogin(w http.ResponseWriter, r *http.Request) {
 	p := loginPage{a.loginBase(r)}
 	if !a.loginLimit.allow(a.clientIP(r)) {
-		p.Error = "Слишком много попыток. Подождите 15 минут."
+		p.Error = tr(p.Lang, "login_too_many")
 		a.render(w, http.StatusTooManyRequests, "login", p)
 		return
 	}
 	if !a.adminHash.verify(r.FormValue("password")) {
-		p.Error = "Неверный пароль."
+		p.Error = tr(p.Lang, "login_wrong")
 		a.render(w, http.StatusUnauthorized, "login", p)
 		return
 	}
@@ -98,36 +90,33 @@ type adminPage struct {
 	ShowReservations bool
 }
 
-func regionText(code string) string {
-	switch code {
-	case "US":
-		return "США"
-	case "CA":
-		return "Канада"
+func regionText(lang, code string) string {
+	if code == "US" || code == "CA" {
+		return tr(lang, "region_"+code)
 	}
-	return "авто"
+	return tr(lang, "region_auto")
 }
 
 func (a *App) handleAdmin(w http.ResponseWriter, r *http.Request) {
-	p := adminPage{base: a.adminBase(r, "Подарки")}
-	now := time.Now()
+	p := adminPage{base: a.adminBase(r, "nav_gifts")}
+	lang, now := p.Lang, time.Now()
 	a.store.view(func(d *Data) {
 		p.ShowReservations = d.Settings.ShowReservations
 		for _, it := range d.Items {
 			row := adminRow{
 				ID: it.ID, Title: it.Title, Image: it.Image,
-				PriceText:  itemPrice(it, "ru"),
+				PriceText:  itemPrice(it, lang),
 				Site:       siteName(it.URL),
-				RegionText: regionText(it.Region),
-				StatusText: statusNames[it.Status],
+				RegionText: regionText(lang, it.Region),
+				StatusText: tr(lang, "status_"+it.Status),
 				Status:     it.Status,
 				Priority:   it.Priority,
 				Quantity:   it.Quantity,
 			}
 			if live, bought := it.reserved(now); live > 0 {
-				row.ReservedText = fmt.Sprintf("%d из %d", live, it.Quantity)
+				row.ReservedText = tf(lang, "adm_reserved", live, it.Quantity)
 				if bought > 0 {
-					row.ReservedText += fmt.Sprintf(", куплено %d", bought)
+					row.ReservedText += tf(lang, "adm_bought", bought)
 				}
 			}
 			p.Rows = append(p.Rows, row)
@@ -162,21 +151,6 @@ func parseShopURL(raw string) (*url.URL, bool) {
 		return nil, false
 	}
 	return u, true
-}
-
-// fetchNote explains in the edit form what the page fetch could not fill in.
-func fetchNote(m Meta, err error) string {
-	if err != nil {
-		return "Не удалось прочитать страницу магазина (" + err.Error() + "). Заполните поля вручную."
-	}
-	var notes []string
-	if m.Unavailable {
-		notes = append(notes, "Магазин сейчас не продаёт этот товар: гости видят «Временно недоступен в магазине». Утренняя проверка в 6:00 подставит цену, когда товар появится.")
-	}
-	if miss := m.missing(); len(miss) > 0 {
-		notes = append(notes, "Со страницы не удалось взять: "+strings.Join(miss, ", ")+". Допишите вручную.")
-	}
-	return strings.Join(notes, " ")
 }
 
 // saveImage downloads src into the images dir and returns the new file name.
@@ -219,7 +193,7 @@ func (a *App) handleAdd(w http.ResponseWriter, r *http.Request) {
 		ID: newID(), URL: u.String(),
 		Title: meta.Title, ImageSrc: meta.Image, Price: meta.Price, Currency: meta.Currency,
 		Region: detectRegion(u), Quantity: 1, Status: statusActive,
-		FetchNote: fetchNote(meta, ferr), CreatedAt: now, UpdatedAt: now,
+		Fetch: fetchInfo(meta, ferr), CreatedAt: now, UpdatedAt: now,
 	}
 	if it.Region == "" {
 		it.Region = detectRegion(meta.FinalURL) // short links such as a.co
@@ -236,7 +210,7 @@ func (a *App) handleAdd(w http.ResponseWriter, r *http.Request) {
 		name, err := a.saveImage(ctx, it.ID, meta.Image, u.String())
 		if err != nil {
 			log.Printf("image %s: %v", u.Host, err)
-			it.FetchNote = strings.TrimSpace(it.FetchNote + " Картинку скачать не удалось: " + err.Error() + ".")
+			it.Fetch = withImageErr(it.Fetch, err)
 		}
 		it.Image = name
 	}
@@ -259,7 +233,7 @@ type editPage struct {
 }
 
 func (a *App) handleEditForm(w http.ResponseWriter, r *http.Request) {
-	p := editPage{base: a.adminBase(r, "Подарок")}
+	p := editPage{base: a.adminBase(r, "gift_page")}
 	var found bool
 	a.store.view(func(d *Data) {
 		if it := d.item(r.PathValue("id")); it != nil {
@@ -309,7 +283,7 @@ func (a *App) handleEdit(w http.ResponseWriter, r *http.Request) {
 		region = ""
 	}
 	status := r.FormValue("status")
-	if _, ok := statusNames[status]; !ok {
+	if !validStatus[status] {
 		status = statusActive
 	}
 	priority := 0
@@ -331,17 +305,18 @@ func (a *App) handleEdit(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// A changed picture URL is downloaded before taking the store lock.
-	newImage, imageChanged, imageNote := "", imageSrc != oldSrc, ""
+	newImage, imageChanged := "", imageSrc != oldSrc
+	var imageNote *FetchInfo
 	if imageChanged && imageSrc != "" {
 		if _, ok := parseShopURL(imageSrc); !ok {
-			imageNote = "Ссылка на картинку не похожа на https://…"
+			imageNote = &FetchInfo{ImageBadURL: true}
 			imageChanged = false
 		} else {
 			ctx, cancel := context.WithTimeout(r.Context(), 30*time.Second)
 			name, err := a.saveImage(ctx, id, imageSrc, u.String())
 			cancel()
 			if err != nil {
-				imageNote = "Картинку скачать не удалось: " + err.Error() + "."
+				imageNote = withImageErr(nil, err)
 				imageChanged = false
 			}
 			newImage = name
@@ -363,7 +338,7 @@ func (a *App) handleEdit(w http.ResponseWriter, r *http.Request) {
 		it.Status = status
 		it.Priority = priority
 		it.Notes = limit(r.FormValue("notes"), 1000)
-		it.FetchNote = imageNote
+		it.FetchNote, it.Fetch = "", imageNote
 		if imageChanged {
 			oldImage = it.Image
 			it.Image, it.ImageSrc = newImage, imageSrc
@@ -405,12 +380,12 @@ func (a *App) handleRefresh(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := context.WithTimeout(r.Context(), 60*time.Second)
 	defer cancel()
 	meta, ferr := a.fetchMeta(ctx, pageURL)
-	note := fetchNote(meta, ferr)
+	note := fetchInfo(meta, ferr)
 	var newImage string
 	if meta.Image != "" {
 		name, err := a.saveImage(ctx, id, meta.Image, pageURL)
 		if err != nil {
-			note = strings.TrimSpace(note + " Картинку скачать не удалось: " + err.Error() + ".")
+			note = withImageErr(note, err)
 		}
 		newImage = name
 	}
@@ -439,7 +414,7 @@ func (a *App) handleRefresh(w http.ResponseWriter, r *http.Request) {
 		if meta.Title != "" && (it.Title == "" || it.Title == siteName(it.URL)) {
 			it.Title = meta.Title
 		}
-		it.FetchNote = note
+		it.FetchNote, it.Fetch = "", note
 		it.UpdatedAt = time.Now()
 		return nil
 	})
@@ -509,22 +484,26 @@ type settingsPage struct {
 
 func (a *App) handleSettingsForm(w http.ResponseWriter, r *http.Request) {
 	p := settingsPage{
-		base:        a.adminBase(r, "Настройки"),
+		base:        a.adminBase(r, "settings_page"),
 		NotifyTo:    notifyTo(a.cfg),
 		MailEnabled: a.mail.enabled(),
 		BaseURL:     a.cfg.BaseURL,
 	}
+	// ?mailerr= is "off", "bad_to" or the SMTP server's own error text.
 	if e := r.URL.Query().Get("mailerr"); e != "" {
-		p.Error = "Почта: " + e
+		if e == "off" || e == "bad_to" {
+			e = tr(p.Lang, "mail_err_"+e)
+		}
+		p.Error = tf(p.Lang, "mail_err", e)
 	}
 	if to := r.URL.Query().Get("mailok"); to != "" {
-		p.Flash = "Сервер " + a.cfg.SMTPHost + " принял тестовое письмо для " + to + ". Это то же письмо, что гость получает после брони, с примером подарка; ссылка в нём ведёт на главную страницу. Проверьте ящик, в том числе папку «Спам»."
+		p.Flash = tf(p.Lang, "mail_test_ok", a.cfg.SMTPHost, to)
 	}
 	p.MailFrom = a.cfg.SMTPFrom
 	a.store.view(func(d *Data) { p.Settings = d.Settings })
 	p.Addresses = []addressForm{
-		{Prefix: "us", Title: "США (Shippsy)", Fields: p.Settings.AddrUS.fields()},
-		{Prefix: "ca", Title: "Канада", Fields: p.Settings.AddrCA.fields()},
+		{Prefix: "us", Title: tr(p.Lang, "addr_title_us"), Fields: p.Settings.AddrUS.fields()},
+		{Prefix: "ca", Title: tr(p.Lang, "addr_title_ca"), Fields: p.Settings.AddrCA.fields()},
 	}
 	a.render(w, http.StatusOK, "settings", p)
 }
@@ -576,19 +555,21 @@ func (a *App) handleSettings(w http.ResponseWriter, r *http.Request) {
 // SMTP login, encryption and sending address in one go.
 func (a *App) handleMailTest(w http.ResponseWriter, r *http.Request) {
 	if !a.mail.enabled() {
-		http.Redirect(w, r, "/admin/settings?mailerr="+url.QueryEscape("SMTP_HOST или SMTP_FROM не заданы"), http.StatusSeeOther)
+		http.Redirect(w, r, "/admin/settings?mailerr="+"off", http.StatusSeeOther)
 		return
 	}
 	to, err := mail.ParseAddress(strings.TrimSpace(r.FormValue("to")))
 	if err != nil {
-		http.Redirect(w, r, "/admin/settings?mailerr="+url.QueryEscape("адрес получателя не похож на email"), http.StatusSeeOther)
+		http.Redirect(w, r, "/admin/settings?mailerr="+"bad_to", http.StatusSeeOther)
 		return
 	}
 	// The test is the real reservation email, so it meets the same spam filters.
 	var days int
 	a.store.view(func(d *Data) { days = d.Settings.ReserveDays })
 	// The link goes to the list itself: a test has no reservation of its own.
-	subject, body := a.confirmationMail("ru", a.cfg.BaseURL+"/", "Пример подарка", time.Now().AddDate(0, 0, days))
+	// It goes out in the admin's language.
+	lang := detectLang(r)
+	subject, body := a.confirmationMail(lang, a.cfg.BaseURL+"/", tr(lang, "sample_gift"), time.Now().AddDate(0, 0, days))
 	err = a.mail.send(to.Address, subject, body)
 	if err != nil {
 		log.Printf("mail test to %s: %v", to.Address, err)

@@ -230,7 +230,7 @@ type base struct {
 	Error     string
 	Version   string
 	Admin     bool
-	NoNav     bool // login page
+	NoNav     bool // login page: only the language switch
 
 	// For link previews (Open Graph), always in English: public origin, the
 	// English site title (or the page's own, e.g. a gift's name) and intro.

@@ -49,13 +49,13 @@ func (m Meta) missing() []string {
 	}
 	var out []string
 	if m.Title == "" {
-		out = append(out, "название")
+		out = append(out, "title")
 	}
 	if m.Image == "" {
-		out = append(out, "картинка")
+		out = append(out, "image")
 	}
 	if m.Price == "" {
-		out = append(out, "цена")
+		out = append(out, "price")
 	}
 	return out
 }

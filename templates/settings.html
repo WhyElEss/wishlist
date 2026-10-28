@@ -1,16 +1,16 @@
 {{define "content"}}
 <section class="panel">
-  <h1>Настройки</h1>
+  <h1>{{t .Lang "settings_page"}}</h1>
   <form method="post" action="/admin/settings" class="form">
     <div class="row">
-      <label>Заголовок (RU)<input name="title_ru" value="{{.Settings.TitleRU}}" maxlength="100"></label>
-      <label>Заголовок (EN)<input name="title_en" value="{{.Settings.TitleEN}}" maxlength="100"></label>
+      <label>{{t .Lang "s_title_ru"}}<input name="title_ru" value="{{.Settings.TitleRU}}" maxlength="100"></label>
+      <label>{{t .Lang "s_title_en"}}<input name="title_en" value="{{.Settings.TitleEN}}" maxlength="100"></label>
     </div>
-    <label>Приветствие (RU)<textarea name="intro_ru" rows="3">{{.Settings.IntroRU}}</textarea></label>
-    <label>Приветствие (EN)<textarea name="intro_en" rows="3">{{.Settings.IntroEN}}</textarea></label>
+    <label>{{t .Lang "s_intro_ru"}}<textarea name="intro_ru" rows="3">{{.Settings.IntroRU}}</textarea></label>
+    <label>{{t .Lang "s_intro_en"}}<textarea name="intro_en" rows="3">{{.Settings.IntroEN}}</textarea></label>
 
-    <h2>Адреса доставки</h2>
-    <p class="hint">Гость видит адрес только после бронирования, в этих же полях, и может скопировать каждое по отдельности или всё сразу. Postal Code в адресе США — это ZIP, с ним сервер открывает amazon.com, чтобы видеть цены.</p>
+    <h2>{{t .Lang "s_addresses"}}</h2>
+    <p class="hint">{{t .Lang "s_addresses_hint"}}</p>
     {{range .Addresses}}
     <fieldset class="addr-edit">
       <legend>{{.Title}}</legend>
@@ -23,25 +23,25 @@
     </fieldset>
     {{end}}
 
-    <h2>Брони</h2>
-    <label>Срок брони, дней<input type="number" name="reserve_days" min="1" max="90" value="{{.Settings.ReserveDays}}"></label>
-    <label class="check"><input type="checkbox" name="show_reservations" value="1"{{if .Settings.ShowReservations}} checked{{end}}> Показывать, что забронировано (спойлеры) в админке и в письмах-уведомлениях</label>
-    <button class="btn primary">Сохранить</button>
+    <h2>{{t .Lang "s_reservations"}}</h2>
+    <label>{{t .Lang "s_reserve_days"}}<input type="number" name="reserve_days" min="1" max="90" value="{{.Settings.ReserveDays}}"></label>
+    <label class="check"><input type="checkbox" name="show_reservations" value="1"{{if .Settings.ShowReservations}} checked{{end}}> {{t .Lang "s_spoilers"}}</label>
+    <button class="btn primary">{{t .Lang "save"}}</button>
   </form>
 </section>
 
 <section class="panel">
-  <h2>Уведомления</h2>
-  <p>Уведомления о бронях, покупках и отменах: {{if .MailEnabled}}письмом на {{.NotifyTo}}.{{else}}выключены, пока не настроена почта (SMTP_* в .env).{{end}}</p>
-  <p>Письма гостям: {{if .MailEnabled}}включены, отправитель {{.MailFrom}}.{{else}}выключены (SMTP_* в .env). Поле email у гостей скрыто.{{end}}</p>
+  <h2>{{t .Lang "s_notices"}}</h2>
+  <p>{{if .MailEnabled}}{{tf .Lang "s_notices_on" .NotifyTo}}{{else}}{{t .Lang "s_notices_off"}}{{end}}</p>
+  <p>{{if .MailEnabled}}{{tf .Lang "s_guest_mail_on" .MailFrom}}{{else}}{{t .Lang "s_guest_mail_off"}}{{end}}</p>
   {{if .MailEnabled}}
   <form method="post" action="/admin/settings/mail-test" class="testmail">
-    <label for="test_to">Кому</label>
-    <input id="test_to" type="email" name="to" required placeholder="ваш личный адрес, например …@gmail.com" autocomplete="email">
-    <button class="btn">Отправить тестовое письмо</button>
+    <label for="test_to">{{t .Lang "s_test_to"}}</label>
+    <input id="test_to" type="email" name="to" required placeholder="{{t .Lang "s_test_placeholder"}}" autocomplete="email">
+    <button class="btn">{{t .Lang "s_test_btn"}}</button>
   </form>
-  <p class="hint">Придёт то же письмо, что гость получает после брони, с примером подарка.</p>
+  <p class="hint">{{t .Lang "s_test_hint"}}</p>
   {{end}}
-  <p class="hint">BASE_URL: {{if .BaseURL}}{{.BaseURL}}{{else}}не задан{{end}}</p>
+  <p class="hint">BASE_URL: {{if .BaseURL}}{{.BaseURL}}{{else}}{{t .Lang "s_unset"}}{{end}}</p>
 </section>
 {{end}}

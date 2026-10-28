@@ -1,52 +1,52 @@
 {{define "content"}}
-<a class="back" href="/admin">← Все подарки</a>
-{{if .Item.FetchNote}}<div class="flash warn">{{.Item.FetchNote}}</div>{{end}}
+<a class="back" href="/admin">{{t .Lang "back_all"}}</a>
+{{with fetchnote .Lang .Item.Fetch}}<div class="flash warn">{{.}}</div>{{else}}{{if .Item.FetchNote}}<div class="flash warn">{{.Item.FetchNote}}</div>{{end}}{{end}}
 <section class="panel edit">
   <div class="preview">
     {{if .Item.Image}}<img src="/img/{{.Item.Image}}" alt="">{{else}}<span class="noimg">🎁</span>{{end}}
   </div>
   <form method="post" action="/admin/items/{{.Item.ID}}" class="form">
-    <label>Ссылка на товар<input type="url" name="url" value="{{.Item.URL}}" required></label>
-    <label>Название<input name="title" value="{{.Item.Title}}" maxlength="300"></label>
-    <label>Картинка (URL)
+    <label>{{t .Lang "f_url"}}<input type="url" name="url" value="{{.Item.URL}}" required></label>
+    <label>{{t .Lang "f_title"}}<input name="title" value="{{.Item.Title}}" maxlength="300"></label>
+    <label>{{t .Lang "f_image"}}
       <input type="url" name="image_src" value="{{.Item.ImageSrc}}">
-      <small class="hint">Если поменять ссылку, картинка скачается заново. Пустое поле убирает картинку.</small>
+      <small class="hint">{{t .Lang "f_image_hint"}}</small>
     </label>
     <div class="row">
-      <label>Цена<input name="price" value="{{.Item.Price}}" inputmode="decimal" maxlength="32">
-        <small class="hint">{{if .Item.Unavailable}}Магазин сейчас не продаёт товар: гости видят «Временно недоступен в магазине». {{end}}{{if .Item.PriceCheckedAt}}С сайта: {{datetime .Item.PriceCheckedAt}}. Проверяется каждый день в 6:00.{{else}}С сайта пока не получена. Ежедневная проверка в 6:00 подставит её, если сайт отдаст цену.{{end}}</small></label>
-      <label>Валюта<input name="currency" value="{{.Item.Currency}}" maxlength="3" placeholder="USD"></label>
-      <label>Количество<input type="number" name="quantity" min="1" max="99" value="{{.Item.Quantity}}"></label>
+      <label>{{t .Lang "f_price"}}<input name="price" value="{{.Item.Price}}" inputmode="decimal" maxlength="32">
+        <small class="hint">{{if .Item.Unavailable}}{{t .Lang "f_unavailable"}} {{end}}{{if .Item.PriceCheckedAt}}{{tf .Lang "f_price_checked" (datetime .Lang .Item.PriceCheckedAt)}}{{else}}{{t .Lang "f_price_never"}}{{end}}</small></label>
+      <label>{{t .Lang "f_currency"}}<input name="currency" value="{{.Item.Currency}}" maxlength="3" placeholder="USD"></label>
+      <label>{{t .Lang "f_quantity"}}<input type="number" name="quantity" min="1" max="99" value="{{.Item.Quantity}}"></label>
     </div>
     <div class="row">
-      <label>Куда доставлять
+      <label>{{t .Lang "f_region"}}
         <select name="region">
-          <option value=""{{if eq .Item.Region ""}} selected{{end}}>Авто: гость выбирает, по умолчанию его страна</option>
-          <option value="US"{{if eq .Item.Region "US"}} selected{{end}}>Только США (Shippsy)</option>
-          <option value="CA"{{if eq .Item.Region "CA"}} selected{{end}}>Только Канада</option>
+          <option value=""{{if eq .Item.Region ""}} selected{{end}}>{{t .Lang "f_region_auto"}}</option>
+          <option value="US"{{if eq .Item.Region "US"}} selected{{end}}>{{t .Lang "f_region_us"}}</option>
+          <option value="CA"{{if eq .Item.Region "CA"}} selected{{end}}>{{t .Lang "f_region_ca"}}</option>
         </select>
       </label>
-      <label>Статус
+      <label>{{t .Lang "f_status"}}
         <select name="status">
-          <option value="active"{{if eq .Item.Status "active"}} selected{{end}}>Активен: виден гостям</option>
-          <option value="received"{{if eq .Item.Status "received"}} selected{{end}}>Получен: в архив</option>
-          <option value="owned"{{if eq .Item.Status "owned"}} selected{{end}}>Уже есть: скрыть</option>
+          <option value="active"{{if eq .Item.Status "active"}} selected{{end}}>{{t .Lang "f_status_active"}}</option>
+          <option value="received"{{if eq .Item.Status "received"}} selected{{end}}>{{t .Lang "f_status_received"}}</option>
+          <option value="owned"{{if eq .Item.Status "owned"}} selected{{end}}>{{t .Lang "f_status_owned"}}</option>
         </select>
       </label>
     </div>
-    <label>Заметка для дарителей
+    <label>{{t .Lang "f_notes"}}
       <textarea name="notes" rows="3" maxlength="1000">{{.Item.Notes}}</textarea>
-      <small class="hint">Размер, цвет, «любой из вариантов», «можно б/у»…</small>
+      <small class="hint">{{t .Lang "f_notes_hint"}}</small>
     </label>
-    <label class="check"><input type="checkbox" name="priority" value="1"{{if .Item.Priority}} checked{{end}}> ★ Очень хочу</label>
-    <button class="btn primary">Сохранить</button>
+    <label class="check"><input type="checkbox" name="priority" value="1"{{if .Item.Priority}} checked{{end}}> {{t .Lang "f_priority"}}</label>
+    <button class="btn primary">{{t .Lang "save"}}</button>
   </form>
 </section>
 <div class="actions">
-  <form method="post" action="/admin/items/{{.Item.ID}}/refresh"><button class="btn">Обновить цену и картинку с сайта</button></form>
+  <form method="post" action="/admin/items/{{.Item.ID}}/refresh"><button class="btn">{{t .Lang "refresh_btn"}}</button></form>
   {{if and .ShowReservations .Reservations}}
-  <form method="post" action="/admin/items/{{.Item.ID}}/release" data-confirm="Снять все брони с этого подарка? Дарители об этом не узнают."><button class="btn">Снять брони ({{.Reservations}})</button></form>
+  <form method="post" action="/admin/items/{{.Item.ID}}/release" data-confirm="{{t .Lang "release_confirm"}}"><button class="btn">{{tf .Lang "release_btn" .Reservations}}</button></form>
   {{end}}
-  <form method="post" action="/admin/items/{{.Item.ID}}/delete" data-confirm="Удалить подарок из списка?"><button class="btn danger">Удалить</button></form>
+  <form method="post" action="/admin/items/{{.Item.ID}}/delete" data-confirm="{{t .Lang "delete_confirm"}}"><button class="btn danger">{{t .Lang "delete_btn"}}</button></form>
 </div>
 {{end}}
