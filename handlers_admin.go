@@ -9,6 +9,7 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -88,6 +89,8 @@ type adminPage struct {
 	base
 	Rows             []adminRow
 	ShowReservations bool
+	SortOrder        string
+	SortOrders       []string
 }
 
 func regionText(lang, code string) string {
@@ -102,7 +105,14 @@ func (a *App) handleAdmin(w http.ResponseWriter, r *http.Request) {
 	lang, now := p.Lang, time.Now()
 	a.store.view(func(d *Data) {
 		p.ShowReservations = d.Settings.ShowReservations
-		for _, it := range d.Items {
+		p.SortOrder, p.SortOrders = d.Settings.SortOrder, sortOrders
+		items := sortedItems(d.Items, d.Settings.SortOrder, d.Rates)
+		if p.SortOrder != "" {
+			// ★ on top as on the site. Reserved gifts are not moved here: that
+			// would give them away in spoiler-free mode.
+			slices.SortStableFunc(items, func(a, b *Item) int { return b.Priority - a.Priority })
+		}
+		for _, it := range items {
 			row := adminRow{
 				ID: it.ID, Title: it.Title, Image: it.Image,
 				PriceText:  itemPrice(it, lang),
@@ -141,6 +151,24 @@ func (a *App) handleOrder(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.WriteHeader(http.StatusNoContent)
+}
+
+// handleSort switches the gift list between the drag order and a sort.
+func (a *App) handleSort(w http.ResponseWriter, r *http.Request) {
+	order := r.FormValue("sort")
+	if !validSortOrder(order) {
+		http.Error(w, "bad sort", http.StatusBadRequest)
+		return
+	}
+	if err := a.store.update(func(d *Data) error {
+		d.Settings.SortOrder = order
+		return nil
+	}); err != nil {
+		log.Printf("sort: %v", err)
+		http.Error(w, "save failed", http.StatusInternalServerError)
+		return
+	}
+	redirectMsg(w, r, "/admin", "saved")
 }
 
 // ---- add / edit ----
@@ -545,6 +573,7 @@ func (a *App) handleSettings(w http.ResponseWriter, r *http.Request) {
 		s.NoticeLang = "ru"
 	}
 	if err := a.store.update(func(d *Data) error {
+		s.SortOrder = d.Settings.SortOrder // set on the gift list, not in this form
 		d.Settings = s
 		return nil
 	}); err != nil {

@@ -23,6 +23,9 @@ func nextPriceRefresh(now time.Time) time.Time {
 // last full pass is more than a day old (the Pi was off at 06:00), it runs one
 // shortly after start instead of waiting for the next morning.
 func (a *App) priceRefresher(ctx context.Context) {
+	// Exchange rates (for sorting by price) are read at start and before
+	// every price check.
+	a.refreshRates(ctx)
 	var last time.Time
 	a.store.view(func(d *Data) { last = d.PricesCheckedAt })
 	wait := time.Until(nextPriceRefresh(time.Now()))
@@ -37,6 +40,7 @@ func (a *App) priceRefresher(ctx context.Context) {
 			return
 		case <-t.C:
 		}
+		a.refreshRates(ctx)
 		a.refreshPrices(ctx)
 		wait = time.Until(nextPriceRefresh(time.Now()))
 	}

@@ -117,7 +117,7 @@ func (a *App) handleIndex(w http.ResponseWriter, r *http.Request) {
 	var intro string
 	a.store.view(func(d *Data) {
 		intro = d.Settings.intro(lang)
-		for _, it := range d.Items {
+		for _, it := range sortedItems(d.Items, d.Settings.SortOrder, d.Rates) {
 			if it.Status != statusActive {
 				continue
 			}
@@ -131,7 +131,7 @@ func (a *App) handleIndex(w http.ResponseWriter, r *http.Request) {
 		}
 	})
 	// Gifts that can still be taken first; among them "really want" (★) above
-	// the rest; within each group the admin's own order.
+	// the rest; within each group the order chosen in the admin panel.
 	sort.SliceStable(cards, func(i, j int) bool {
 		if cards[i].Available != cards[j].Available {
 			return cards[i].Available

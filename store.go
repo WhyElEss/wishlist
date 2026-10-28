@@ -42,6 +42,9 @@ type Settings struct {
 	// NoticeLang is the language of the owner's email notices, "ru" or "en";
 	// "" (files from before the setting) means Russian, as before.
 	NoticeLang string `json:"notice_lang,omitempty"`
+	// SortOrder is how the gift list is ordered: "" for the admin's drag
+	// order, or one of sortOrders (date, title, price, ascending/descending).
+	SortOrder string `json:"sort_order,omitempty"`
 }
 
 func (s Settings) noticeLang() string {
@@ -213,6 +216,11 @@ type Data struct {
 	ManualOrder bool `json:"manual_order"`
 	// PricesCheckedAt is when the daily price check last finished.
 	PricesCheckedAt time.Time `json:"prices_checked_at"`
+	// Rates are Canadian dollars per unit of each other currency (Bank of
+	// Canada daily average); they are used only to sort gifts by price.
+	Rates map[string]float64 `json:"rates,omitempty"`
+	// RatesDate is the Bank of Canada date of Rates.
+	RatesDate string `json:"rates_date,omitempty"`
 }
 
 // reorder puts the items with the given IDs first, in that order; items not

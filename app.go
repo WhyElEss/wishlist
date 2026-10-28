@@ -38,6 +38,9 @@ type App struct {
 	readShop func(ctx context.Context, raw string) (Meta, error)
 
 	discogs *discogsAPI
+
+	// ratesBase is the Bank of Canada Valet API (a test server in tests).
+	ratesBase string
 }
 
 func newApp(cfg Config) (*App, error) {
@@ -75,6 +78,8 @@ func newApp(cfg Config) (*App, error) {
 		priceRefreshPause: 5 * time.Second,
 
 		discogs: &discogsAPI{base: "https://api.discogs.com", client: client},
+
+		ratesBase: "https://www.bankofcanada.ca/valet",
 	}
 	a.readShop = a.fetchMeta
 	return a, nil
@@ -112,6 +117,7 @@ func (a *App) routes() http.Handler {
 	mux.HandleFunc("GET /admin", a.requireAdmin(a.handleAdmin))
 	mux.HandleFunc("POST /admin/items", a.requireAdmin(a.handleAdd))
 	mux.HandleFunc("POST /admin/order", a.requireAdmin(a.handleOrder))
+	mux.HandleFunc("POST /admin/sort", a.requireAdmin(a.handleSort))
 	mux.HandleFunc("GET /admin/items/{id}", a.requireAdmin(a.handleEditForm))
 	mux.HandleFunc("POST /admin/items/{id}", a.requireAdmin(a.handleEdit))
 	mux.HandleFunc("POST /admin/items/{id}/refresh", a.requireAdmin(a.handleRefresh))

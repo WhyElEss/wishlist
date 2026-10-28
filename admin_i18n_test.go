@@ -48,8 +48,9 @@ func TestAdminBilingual(t *testing.T) {
 	pages := []string{"/admin", "/admin/items/g", "/admin/items/old", "/admin/settings", "/admin?m=saved"}
 	for _, path := range pages {
 		page := getLang(t, admin, srv.URL+path, "en-US,en;q=0.9")
-		// "Русский" is the switch to Russian; everything else must be English.
-		if c := reCyrillic.FindString(strings.ReplaceAll(page, "Русский", "")); c != "" {
+		// "Русский" is the switch; "А→Я" names the Cyrillic part of the title sort.
+		rest := strings.NewReplacer("Русский", "", "А→Я", "", "Я→А", "").Replace(page)
+		if c := reCyrillic.FindString(rest); c != "" {
 			i := strings.Index(page, c)
 			t.Errorf("English %s has Russian text near %q", path, page[max(0, i-40):min(len(page), i+80)])
 		}
