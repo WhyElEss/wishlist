@@ -25,7 +25,7 @@ The site and the admin panel are in Russian and English (picked from the browser
 - Order of the list: manual, or sorted by date added, title (Latin titles first, then Cyrillic) or price, each ascending or descending. Prices in other currencies are compared in Canadian dollars at the Bank of Canada daily average rate (Valet API, read at start and before the daily price check); gifts without a price or temporarily unavailable go last.
 - Rows can always be dragged (mouse, touch or arrow keys). A drag switches the list to manual order, keeping the current order plus the change; moving a row between the two parts sets or clears ★.
 - Per-gift quantity, notes, status (active / received / already have) and shipping region (auto / US only / Canada only).
-- Spoiler-free mode (default): the admin panel and the owner's notices do not reveal what was reserved.
+- The admin panel shows how many units of each gift are reserved and bought, and the owner's notices name the gift.
 - Prices are re-read daily at 06:00 (container time zone), and one minute after start when the last check is more than a day old. A price is only replaced by a price actually read from the shop; manual prices for shops that cannot be read stay as they are.
 - When Amazon has no offer of its own for an item ("See All Buying Options" only, or "Currently unavailable"), guests see "Temporarily unavailable in store" instead of a price until the daily check reads a price again.
 - Email notices to the owner about reservations, purchases, cancellations and expiries, in Russian or English (a setting; Russian by default).

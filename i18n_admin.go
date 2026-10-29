@@ -47,8 +47,6 @@ var adminTexts = [][3]string{
 	{"sort_price_asc", "Цена: сначала дешёвые", "Price: lowest first"},
 	{"sort_price_desc", "Цена: сначала дорогие", "Price: highest first"},
 	{"sort_price_note", "Цены в разных валютах сравниваются в канадских долларах по дневному курсу Банка Канады. Подарки без цены и временно недоступные — в конце.", "Prices in different currencies are compared in Canadian dollars at the Bank of Canada daily rate. Gifts without a price and temporarily unavailable ones go last."},
-	{"spoilers_on", "Брони видны: режим со спойлерами.", "Reservations are visible: spoiler mode."},
-	{"spoilers_off", "Режим без спойлеров: брони скрыты здесь и в письмах-уведомлениях. Переключается в настройках.", "Spoiler-free mode: reservations are hidden here and in the notice emails. Switch it in the settings."},
 	{"col_order", "Порядок", "Order"},
 	{"col_item", "Товар", "Gift"},
 	{"col_price", "Цена", "Price"},
@@ -110,7 +108,6 @@ var adminTexts = [][3]string{
 	{"addr_title_ca", "Канада", "Canada"},
 	{"s_reservations", "Брони", "Reservations"},
 	{"s_reserve_days", "Срок брони, дней", "Reservation period, days"},
-	{"s_spoilers", "Показывать, что забронировано (спойлеры) в админке и в письмах-уведомлениях", "Show what is reserved (spoilers) in the admin panel and in the notice emails"},
 	{"s_notices", "Уведомления", "Notices"},
 	{"s_notices_on", "Уведомления о бронях, покупках и отменах: письмом на %s.", "Notices about reservations, purchases and cancellations: by email to %s."},
 	{"s_notices_off", "Уведомления о бронях, покупках и отменах: выключены, пока не настроена почта (SMTP_* в .env).", "Notices about reservations, purchases and cancellations: off until mail is set up (SMTP_* in .env)."},
@@ -128,20 +125,16 @@ var adminTexts = [][3]string{
 	{"sample_gift", "Пример подарка", "Sample gift"},
 	{"s_notice_lang", "Язык писем-уведомлений", "Language of the notice emails"},
 
-	// Owner's notice emails; the _hidden texts are for spoiler-free mode.
+	// Owner's notice emails.
 	{"notice_subject", "Вишлист: %s", "Wishlist: %s"},
 	{"notice_reserved_subj", "подарок забронирован", "gift reserved"},
 	{"notice_reserved", "Забронирован подарок: %s", "Gift reserved: %s"},
-	{"notice_reserved_hidden", "Кто-то забронировал подарок из вашего списка. Какой именно, не показывается: включён режим без спойлеров.", "Someone reserved a gift from your list. Which one is not shown: spoiler-free mode is on."},
 	{"notice_purchased_subj", "подарок куплен", "gift bought"},
 	{"notice_purchased", "Подарок куплен: %s", "Gift bought: %s"},
-	{"notice_purchased_hidden", "Один из подарков отмечен купленным.", "One of the gifts was marked as bought."},
 	{"notice_cancelled_subj", "бронь отменена", "reservation cancelled"},
 	{"notice_cancelled", "Бронь отменена: %s", "Reservation cancelled: %s"},
-	{"notice_cancelled_hidden", "Одну бронь отменили, подарок снова доступен.", "A reservation was cancelled; the gift is available again."},
 	{"notice_expired_subj", "бронь истекла", "reservation expired"},
 	{"notice_expired", "Бронь истекла, подарок снова доступен: %s", "A reservation expired; the gift is available again: %s"},
-	{"notice_expired_hidden", "Одна бронь истекла, подарок снова доступен.", "A reservation expired; the gift is available again."},
 }
 
 func init() {

@@ -87,11 +87,10 @@ type adminRow struct {
 
 type adminPage struct {
 	base
-	HotRows          []adminRow // ★ "really want", shown as their own list on top
-	Rows             []adminRow
-	ShowReservations bool
-	SortOrder        string
-	SortOrders       []string
+	HotRows    []adminRow // ★ "really want", shown as their own list on top
+	Rows       []adminRow
+	SortOrder  string
+	SortOrders []string
 }
 
 func regionText(lang, code string) string {
@@ -105,7 +104,6 @@ func (a *App) handleAdmin(w http.ResponseWriter, r *http.Request) {
 	p := adminPage{base: a.adminBase(r, "nav_gifts")}
 	lang, now := p.Lang, time.Now()
 	a.store.view(func(d *Data) {
-		p.ShowReservations = d.Settings.ShowReservations
 		p.SortOrder, p.SortOrders = d.Settings.SortOrder, sortOrders
 		for _, it := range adminOrder(d) {
 			row := adminRow{
@@ -171,8 +169,7 @@ func (a *App) handleOrder(w http.ResponseWriter, r *http.Request) {
 }
 
 // adminOrder is the gift list as the admin panel shows it. With a sort on,
-// ★ gifts come first, as on the site; reserved gifts are not moved, since
-// that would give them away in spoiler-free mode.
+// ★ gifts come first, as on the site; reserved gifts stay in place.
 func adminOrder(d *Data) []*Item {
 	items := sortedItems(d.Items, d.Settings.SortOrder, d.Rates)
 	if d.Settings.SortOrder != "" {
@@ -288,9 +285,8 @@ func (a *App) handleAdd(w http.ResponseWriter, r *http.Request) {
 
 type editPage struct {
 	base
-	Item             Item
-	Reservations     int
-	ShowReservations bool
+	Item         Item
+	Reservations int
 }
 
 func (a *App) handleEditForm(w http.ResponseWriter, r *http.Request) {
@@ -302,7 +298,6 @@ func (a *App) handleEditForm(w http.ResponseWriter, r *http.Request) {
 			p.Item = *it
 			p.Item.Reservations = nil
 			p.Reservations = len(it.Reservations)
-			p.ShowReservations = d.Settings.ShowReservations
 		}
 	})
 	if !found {
@@ -592,15 +587,14 @@ func (a *App) handleSettings(w http.ResponseWriter, r *http.Request) {
 		days = 90
 	}
 	s := Settings{
-		TitleRU:          limit(r.FormValue("title_ru"), 100),
-		TitleEN:          limit(r.FormValue("title_en"), 100),
-		IntroRU:          limit(r.FormValue("intro_ru"), 2000),
-		IntroEN:          limit(r.FormValue("intro_en"), 2000),
-		AddrUS:           addressFromForm(r, "us"),
-		AddrCA:           addressFromForm(r, "ca"),
-		ShowReservations: r.FormValue("show_reservations") == "1",
-		ReserveDays:      days,
-		NoticeLang:       r.FormValue("notice_lang"),
+		TitleRU:     limit(r.FormValue("title_ru"), 100),
+		TitleEN:     limit(r.FormValue("title_en"), 100),
+		IntroRU:     limit(r.FormValue("intro_ru"), 2000),
+		IntroEN:     limit(r.FormValue("intro_en"), 2000),
+		AddrUS:      addressFromForm(r, "us"),
+		AddrCA:      addressFromForm(r, "ca"),
+		ReserveDays: days,
+		NoticeLang:  r.FormValue("notice_lang"),
 	}
 	if s.NoticeLang != "en" {
 		s.NoticeLang = "ru"

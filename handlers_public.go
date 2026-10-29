@@ -233,7 +233,6 @@ func (a *App) handleReserve(w http.ResponseWriter, r *http.Request) {
 	now := time.Now()
 	token := newToken()
 	var title string
-	var spoilers bool
 	var expires time.Time
 	err := a.store.update(func(d *Data) error {
 		it := d.item(r.PathValue("id"))
@@ -248,7 +247,7 @@ func (a *App) handleReserve(w http.ResponseWriter, r *http.Request) {
 			ID: newID(), Token: token, Email: email, Lang: lang,
 			CreatedAt: now, ExpiresAt: expires, LinkEmailed: email != "",
 		})
-		title, spoilers = it.Title, d.Settings.ShowReservations
+		title = it.Title
 		return nil
 	})
 	switch {
@@ -265,7 +264,7 @@ func (a *App) handleReserve(w http.ResponseWriter, r *http.Request) {
 	}
 
 	a.addMine(w, r, token)
-	a.notify("reserved", spoilers, title)
+	a.notify("reserved", title)
 	if email != "" {
 		go a.sendConfirmation(email, lang, token, title, expires)
 	}
@@ -357,7 +356,7 @@ func (a *App) handlePurchased(w http.ResponseWriter, r *http.Request) {
 	token := r.PathValue("token")
 	now := time.Now()
 	var title string
-	var spoilers, first bool
+	var first bool
 	err := a.store.update(func(d *Data) error {
 		it, res := d.findReservation(token)
 		if it == nil || !res.live(now) {
@@ -368,7 +367,7 @@ func (a *App) handlePurchased(w http.ResponseWriter, r *http.Request) {
 		}
 		res.PurchasedAt = &now
 		res.Email = ""
-		title, spoilers, first = it.Title, d.Settings.ShowReservations, true
+		title, first = it.Title, true
 		return nil
 	})
 	if errors.Is(err, errNotFound) {
@@ -381,7 +380,7 @@ func (a *App) handlePurchased(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if first {
-		a.notify("purchased", spoilers, title)
+		a.notify("purchased", title)
 	}
 	http.Redirect(w, r, "/r/"+token+"?m=purchased", http.StatusSeeOther)
 }
@@ -390,7 +389,6 @@ func (a *App) handleCancel(w http.ResponseWriter, r *http.Request) {
 	lang := detectLang(r)
 	token := r.PathValue("token")
 	var title string
-	var spoilers bool
 	err := a.store.update(func(d *Data) error {
 		it, res := d.findReservation(token)
 		if it == nil {
@@ -403,7 +401,7 @@ func (a *App) handleCancel(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 		it.Reservations = kept
-		title, spoilers = it.Title, d.Settings.ShowReservations
+		title = it.Title
 		return nil
 	})
 	if errors.Is(err, errNotFound) {
@@ -417,6 +415,6 @@ func (a *App) handleCancel(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	a.dropMine(w, r, token)
-	a.notify("cancelled", spoilers, title)
+	a.notify("cancelled", title)
 	http.Redirect(w, r, "/?m=cancelled", http.StatusSeeOther)
 }

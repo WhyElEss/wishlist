@@ -12,17 +12,16 @@
 </form>
 <p class="hint">
   {{if .SortOrder}}{{t .Lang "list_sorted_hint"}}{{else}}{{t .Lang "list_order_hint"}}{{end}}
-  {{if or (eq .SortOrder "price_asc") (eq .SortOrder "price_desc")}}{{t .Lang "sort_price_note"}}{{end}}<br>
-  {{if .ShowReservations}}{{t .Lang "spoilers_on"}}{{else}}{{t .Lang "spoilers_off"}}{{end}}
+  {{if or (eq .SortOrder "price_asc") (eq .SortOrder "price_desc")}}{{t .Lang "sort_price_note"}}{{end}}
 </p>
 {{/* Two drag lists: ★ "really want" on top, everything else below. Moving a
      row between them sets or clears ★; any drag switches the order to manual. */}}
-{{$cols := 7}}{{if .ShowReservations}}{{$cols = 8}}{{end}}
+{{$cols := 8}}
 <div class="tablewrap">
 <table class="items" data-sortable="/admin/order">
   <thead><tr>
     <th><span class="sr-only">{{t .Lang "col_order"}}</span></th><th></th><th>{{t .Lang "col_item"}}</th><th>{{t .Lang "col_price"}}</th><th>{{t .Lang "col_address"}}</th><th>{{t .Lang "col_qty"}}</th><th>{{t .Lang "col_status"}}</th>
-    {{if .ShowReservations}}<th>{{t .Lang "col_reservations"}}</th>{{end}}
+    <th>{{t .Lang "col_reservations"}}</th>
   </tr></thead>
   <tbody data-group="hot">
     <tr class="group"><th colspan="{{$cols}}">{{t .Lang "group_hot"}}</th></tr>
@@ -47,6 +46,6 @@
       <td>{{.RegionText}}</td>
       <td>{{.Quantity}}</td>
       <td>{{.StatusText}}</td>
-      {{if $.Page.ShowReservations}}<td>{{.ReservedText}}</td>{{end}}
+      <td>{{.ReservedText}}</td>
     </tr>
 {{end}}{{end}}

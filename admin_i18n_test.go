@@ -110,28 +110,23 @@ func TestAdminStatusStillValidated(t *testing.T) {
 
 func TestNoticeLanguage(t *testing.T) {
 	for _, c := range []struct {
-		lang, event     string
-		spoilers        bool
-		subject, prefix string
+		lang, event, subject, text string
 	}{
-		{"ru", "reserved", true, "Вишлист: подарок забронирован", "Забронирован подарок: Gift"},
-		{"en", "reserved", true, "Wishlist: gift reserved", "Gift reserved: Gift"},
-		{"en", "purchased", false, "Wishlist: gift bought", "One of the gifts was marked as bought."},
-		{"en", "cancelled", true, "Wishlist: reservation cancelled", "Reservation cancelled: Gift"},
-		{"ru", "expired", false, "Вишлист: бронь истекла", "Одна бронь истекла"},
+		{"ru", "reserved", "Вишлист: подарок забронирован", "Забронирован подарок: Gift"},
+		{"en", "reserved", "Wishlist: gift reserved", "Gift reserved: Gift"},
+		{"en", "purchased", "Wishlist: gift bought", "Gift bought: Gift"},
+		{"en", "cancelled", "Wishlist: reservation cancelled", "Reservation cancelled: Gift"},
+		{"ru", "expired", "Вишлист: бронь истекла", "Бронь истекла, подарок снова доступен: Gift"},
 	} {
-		subject, text := noticeText(c.lang, c.event, c.spoilers, "Gift")
-		if subject != c.subject || !strings.HasPrefix(text, c.prefix) {
+		subject, text := noticeText(c.lang, c.event, "Gift")
+		if subject != c.subject || text != c.text {
 			t.Errorf("%s %s: %q / %q", c.lang, c.event, subject, text)
-		}
-		if !c.spoilers && strings.Contains(text, "Gift") {
-			t.Errorf("%s %s names the gift in spoiler-free mode", c.lang, c.event)
 		}
 	}
 	// Every event has its texts in both languages.
 	for _, lang := range []string{"ru", "en"} {
 		for _, event := range []string{"reserved", "purchased", "cancelled", "expired"} {
-			for _, key := range []string{"notice_" + event + "_subj", "notice_" + event, "notice_" + event + "_hidden"} {
+			for _, key := range []string{"notice_" + event + "_subj", "notice_" + event} {
 				if _, ok := messages[lang][key]; !ok {
 					t.Errorf("%s lacks %s", lang, key)
 				}

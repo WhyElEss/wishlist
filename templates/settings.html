@@ -25,7 +25,6 @@
 
     <h2>{{t .Lang "s_reservations"}}</h2>
     <label>{{t .Lang "s_reserve_days"}}<input type="number" name="reserve_days" min="1" max="90" value="{{.Settings.ReserveDays}}"></label>
-    <label class="check"><input type="checkbox" name="show_reservations" value="1"{{if .Settings.ShowReservations}} checked{{end}}> {{t .Lang "s_spoilers"}}</label>
     <label>{{t .Lang "s_notice_lang"}}
       <select name="notice_lang">
         <option value="ru"{{if eq .Settings.NoticeLang "" "ru"}} selected{{end}}>Русский</option>

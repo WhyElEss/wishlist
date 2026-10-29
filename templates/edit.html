@@ -44,7 +44,7 @@
 </section>
 <div class="actions">
   <form method="post" action="/admin/items/{{.Item.ID}}/refresh"><button class="btn">{{t .Lang "refresh_btn"}}</button></form>
-  {{if and .ShowReservations .Reservations}}
+  {{if .Reservations}}
   <form method="post" action="/admin/items/{{.Item.ID}}/release" data-confirm="{{t .Lang "release_confirm"}}"><button class="btn">{{tf .Lang "release_btn" .Reservations}}</button></form>
   {{end}}
   <form method="post" action="/admin/items/{{.Item.ID}}/delete" data-confirm="{{t .Lang "delete_confirm"}}"><button class="btn danger">{{t .Lang "delete_btn"}}</button></form>

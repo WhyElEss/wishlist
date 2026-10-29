@@ -305,9 +305,7 @@ type reminder struct {
 func (a *App) sweep(now time.Time) {
 	var expired []string
 	var reminders []reminder
-	var spoilers bool
 	err := a.store.update(func(d *Data) error {
-		spoilers = d.Settings.ShowReservations
 		changed := false
 		for _, it := range d.Items {
 			kept := it.Reservations[:0]
@@ -337,7 +335,7 @@ func (a *App) sweep(now time.Time) {
 		return
 	}
 	for _, title := range expired {
-		a.notify("expired", spoilers, title)
+		a.notify("expired", title)
 	}
 	for _, rm := range reminders {
 		go a.sendReminder(rm)
