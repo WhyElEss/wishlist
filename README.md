@@ -80,6 +80,7 @@ Images are downloaded once and served from the app, so cards do not depend on th
 | `ratelimit.go` | Per-IP limits, client IP and country from Cloudflare headers |
 | `i18n.go` | Russian and English texts of the public site, price and date formatting |
 | `i18n_admin.go` | Russian and English texts of the admin panel; notes on what a shop page could not fill in |
+| `tools/backup.sh` | Nightly backup of the data volume, `docker-compose.yml` and `.env` (cron, outside the binary) |
 | `templates/`, `static/` | HTML templates, CSS, a small script for copying, tabs and drag ordering; embedded into the binary |
 
 Data lives in `wishlist.json` in the data volume. The gift list is in display order; reservations sit inside each gift with their secret token, the guest's email (kept until the gift is marked as bought) and expiry. A reservation is made under the store lock, so two guests can never take the same last unit.
@@ -118,10 +119,21 @@ Update:
 cd ~/wishlist && docker compose build --no-cache && docker compose up -d
 ```
 
-Backup of the data volume:
+### Backups
+
+[`tools/backup.sh`](tools/backup.sh) archives the data volume (`wishlist.json`, `session.key`, `images/`) together with `docker-compose.yml` and `.env`, while the wishlist keeps running, into `~/wishlist-backups` (mode 700, archives 600) and keeps the 14 newest archives. Run it from cron:
+
+```
+15 4 * * * /bin/bash /home/you/cron-tasks/wishlist-backup.sh
+```
+
+Restore with the wishlist stopped:
 
 ```bash
-docker run --rm -v wishlist_data:/data -v "$PWD":/backup alpine tar czf /backup/wishlist-data.tgz -C /data .
+docker compose stop wishlist
+docker run --rm --user 0 -v wishlist_data:/data -v ~/wishlist-backups:/b:ro \
+  --entrypoint sh wishlist:local -c 'cd /data && tar -xzf /b/<archive> --strip-components=1 data/'
+docker compose up -d
 ```
 
 ### Public hostname (Cloudflare Tunnel)
