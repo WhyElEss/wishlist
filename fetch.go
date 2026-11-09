@@ -1,6 +1,7 @@
 package main
 
 import (
+	"cmp"
 	"context"
 	"encoding/json"
 	"errors"
@@ -39,7 +40,15 @@ type Meta struct {
 	Unavailable bool
 	// Format is vinyl, cd or cassette when the shop says so (Discogs).
 	Format string
+
+	stock string // stockIn, stockOut or "" while parsing; decides Unavailable
+	sku   string // schema.org Product sku, keys the shop's own stock data
 }
+
+const (
+	stockIn  = "in"
+	stockOut = "out"
+)
 
 func (m Meta) complete() bool { return m.Title != "" && m.Image != "" && m.Price != "" }
 
@@ -75,6 +84,13 @@ func mergeMeta(a, b Meta) Meta {
 	if a.FinalURL == nil {
 		a.FinalURL = b.FinalURL
 	}
+	if a.stock == "" {
+		a.stock = b.stock
+	}
+	if a.sku == "" {
+		a.sku = b.sku
+	}
+	a.Unavailable = a.Unavailable || b.Unavailable
 	return a
 }
 
@@ -197,6 +213,10 @@ func parseMeta(doc string, base *url.URL) Meta {
 	m.Currency = first("product:price:currency", "og:price:currency", "pricecurrency")
 
 	m = mergeMeta(m, parseLD(doc))
+	// Stock, most specific first: the shop's own data for this sku, then
+	// schema.org offers, then meta tags.
+	m.stock = cmp.Or(cxStock(doc, m.sku), m.stock, stockWord(first("product:availability", "og:availability", "availability")))
+	m.Unavailable = m.stock == stockOut
 
 	if m.Image == "" {
 		for _, tag := range reLink.FindAllString(doc, -1) {
@@ -264,14 +284,19 @@ func walkLD(v any, m *Meta) {
 			if m.Image == "" {
 				m.Image = ldImage(x["image"])
 			}
+			if m.sku == "" {
+				m.sku = ldString(x["sku"])
+			}
 			if m.Price == "" {
 				m.Price, m.Currency = ldOffer(x["offers"])
+				m.stock = ldStock(x["offers"])
 			}
 			if m.Price == "" {
 				if vs, ok := x["hasVariant"].([]any); ok && len(vs) > 0 {
 					if v0, ok := vs[0].(map[string]any); ok {
 						m.Price, m.Currency = ldOffer(v0["offers"])
 					}
+					m.stock = ldStock(vs) // in stock when any variant is
 				}
 			}
 		}
@@ -352,6 +377,89 @@ func ldOffer(v any) (price, currency string) {
 		}
 	}
 	return price, currency
+}
+
+// ldStock reads schema.org availability from offers (or variants with
+// offers): in stock when any of them is, out of stock when the ones that say
+// anything all say out.
+func ldStock(v any) string {
+	switch t := v.(type) {
+	case []any:
+		var s string
+		for _, e := range t {
+			switch ldStock(e) {
+			case stockIn:
+				return stockIn
+			case stockOut:
+				s = stockOut
+			}
+		}
+		return s
+	case map[string]any:
+		if s := stockWord(ldString(t["availability"])); s != "" {
+			return s
+		}
+		return ldStock(t["offers"])
+	}
+	return ""
+}
+
+// stockWord maps a schema.org ItemAvailability ("https://schema.org/OutOfStock")
+// or an Open Graph product:availability ("out of stock") to stockIn/stockOut;
+// "" for anything else.
+func stockWord(s string) string {
+	s = s[strings.LastIndexAny(s, "/:")+1:]
+	switch strings.ToLower(strings.NewReplacer(" ", "", "_", "", "-", "").Replace(s)) {
+	case "outofstock", "oos", "soldout", "discontinued":
+		return stockOut
+	case "instock", "instoreonly", "onlineonly", "limitedavailability", "preorder", "presale", "backorder", "madetoorder", "availablefororder":
+		return stockIn
+	}
+	return ""
+}
+
+var reNgState = regexp.MustCompile(`(?is)<script\b[^>]*\bid\s*=\s*["']?ng-state["']?[^>]*>(.*?)</script>`)
+
+// cxStock reads the stock of sku from the state an Angular shop embeds as
+// <script id="ng-state" type="application/json">. Seen on sony.ca, whose
+// JSON-LD has a price but no availability: there
+// cx-state.product.details.entities[sku].details.value.stock.stockLevelStatus
+// is "inStock" or "outOfStock" (other values seen nowhere yet, so ignored).
+func cxStock(doc, sku string) string {
+	if sku == "" || !strings.Contains(doc, "ng-state") {
+		return ""
+	}
+	m := reNgState.FindStringSubmatch(doc)
+	if m == nil {
+		return ""
+	}
+	var st struct {
+		CX struct {
+			Product struct {
+				Details struct {
+					Entities map[string]struct {
+						Details struct {
+							Value struct {
+								Stock struct {
+									Status string `json:"stockLevelStatus"`
+								} `json:"stock"`
+							} `json:"value"`
+						} `json:"details"`
+					} `json:"entities"`
+				} `json:"details"`
+			} `json:"product"`
+		} `json:"cx-state"`
+	}
+	if json.Unmarshal([]byte(m[1]), &st) != nil {
+		return ""
+	}
+	switch st.CX.Product.Details.Entities[sku].Details.Value.Stock.Status {
+	case "inStock":
+		return stockIn
+	case "outOfStock":
+		return stockOut
+	}
+	return ""
 }
 
 var imageExt = map[string]string{

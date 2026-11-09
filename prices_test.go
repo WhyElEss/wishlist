@@ -107,6 +107,20 @@ func TestPriceCheckTracksAvailability(t *testing.T) {
 		}
 	})
 
+	// Out of stock with a price on the page (sony.ca): the price is taken,
+	// guests still see the item as unavailable.
+	shop = Meta{Price: "47.00", Currency: "CAD", Unavailable: true}
+	app.refreshPrices(context.Background())
+	app.store.view(func(d *Data) {
+		it := d.item("v")
+		if !it.Unavailable || it.Price != "47.00" || it.PriceCheckedAt == nil {
+			t.Errorf("after out of stock with a price: %+v", it)
+		}
+		if got := itemPrice(it, "en"); got != "Temporarily unavailable in store" {
+			t.Errorf("guests see %q", got)
+		}
+	})
+
 	shop = Meta{Price: "45.00", Currency: "CAD"}
 	app.refreshPrices(context.Background())
 	app.store.view(func(d *Data) {

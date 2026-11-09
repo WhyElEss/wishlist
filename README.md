@@ -26,8 +26,8 @@ The site and the admin panel are in Russian and English (picked from the browser
 - Rows can always be dragged (mouse, touch or arrow keys). A drag switches the list to manual order, keeping the current order plus the change; moving a row between the two parts sets or clears ★.
 - Per-gift quantity, notes, status (active / received / already have) and shipping region (auto / US only / Canada only).
 - The admin panel shows how many units of each gift are reserved and bought, and the owner's notices name the gift.
-- Prices are re-read daily at 06:00 (container time zone), and one minute after start when the last check is more than a day old. A price is only replaced by a price actually read from the shop; manual prices for shops that cannot be read stay as they are.
-- When Amazon has no offer of its own for an item ("See All Buying Options" only, or "Currently unavailable"), guests see "Temporarily unavailable in store" instead of a price until the daily check reads a price again.
+- Prices are re-read daily at 06:00 (container time zone), and one minute after start when the last check is more than a day old. A price is only replaced by a price actually read from the shop; manual prices for shops that cannot be read stay as they are. The container log names every gift the check could not read and why (HTTP status, timeout, or no price on the page).
+- When a shop says an item is out of stock, guests see "Temporarily unavailable in store" instead of a price until the daily check finds it in stock again. Some shops keep showing a price for items they cannot sell (sony.ca); the price is still stored, just hidden.
 - Email notices to the owner about reservations, purchases, cancellations and expiries, in Russian or English (a setting; Russian by default).
 - Shipping addresses for the US and Canada are edited in the settings as separate fields (name, two address lines, city, province or state, postal code, country). They are stored in the data volume, not in the repository.
 
@@ -46,6 +46,7 @@ The site and the admin panel are in Russian and English (picked from the browser
 | Amazon, no offer | Markers `unqualifiedBuyBox` / `buybox-see-all-buying-choices` or "Currently unavailable" | Shown as temporarily unavailable; the last known price is kept but hidden. |
 | Discogs | Public API at `api.discogs.com` (no key) | Pages are behind a Cloudflare challenge. `/master/…` and `/release/…` and `/sell/release/…` show the cheapest marketplace offer in USD as "from $X"; `/shop/item/…` and `/sell/item/…` show the listing's fixed price. |
 | Any other shop | OpenGraph tags and schema.org `Product` JSON-LD | Tried with a browser User-Agent and with the Facebook preview crawler's. |
+| Stock, any other shop | First the shop's own data for the JSON-LD `sku` (sony.ca: `stockLevelStatus` in the page's `ng-state` script), then JSON-LD `offers.availability`, then the `product:availability` meta tag | `OutOfStock`, `SoldOut`, `Discontinued` (or "out of stock") mean temporarily unavailable; one offer or variant in stock is enough to count as available. |
 | Sites that refuse non-browser clients | Not readable | Seen so far: eBay and Casio (Akamai Bot Manager), Best Buy Canada and LEGO (HTTP 403). The card is created with a note; title, price and picture are filled in by hand. |
 
 Images are downloaded once and served from the app, so cards do not depend on the shop's image links.

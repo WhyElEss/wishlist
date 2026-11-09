@@ -48,6 +48,49 @@ func TestParseMetaJSONLD(t *testing.T) {
 	}
 }
 
+func TestParseMetaStock(t *testing.T) {
+	ld := func(offers string) string {
+		return `<script type="application/ld+json">{"@type":"Product","name":"Thing","sku":"t-1","offers":` + offers + `}</script>`
+	}
+	// The shape of a sony.ca product page, trimmed: price in JSON-LD, stock
+	// only in the Angular state, keyed by the JSON-LD sku.
+	sony := func(sku, status string) string {
+		return `<script type="application/ld+json" id="pdp-jsonld-data">{"@context":"https://schema.org","@type":"Product","name":"MDR3R/S","sku":"` + sku + `",` +
+			`"offers":{"@type":"Offer","priceCurrency":"CAD","price":99.99}}</script>` +
+			`<script id="ng-state" type="application/json">{"cx-state":{"product":{"details":{"entities":{"` + sku + `":{"details":{"value":{"code":"` + sku + `",` +
+			`"baseOptions":[{"options":[{"code":"other","stock":{"stockLevelStatus":"inStock"}}]}],` +
+			`"stock":{"shippingDetails":{"dateMessageDesktop":"Out Of Stock"},"status":"notifyme","stockLevel":0,"stockLevelStatus":"` + status + `"}}}}}}}}}</script>`
+	}
+	for _, c := range []struct {
+		name, doc string
+		out       bool
+	}{
+		{"ld out of stock", ld(`{"price":"10","priceCurrency":"CAD","availability":"https://schema.org/OutOfStock"}`), true},
+		{"ld sold out, short form", ld(`{"price":"10","availability":"SoldOut"}`), true},
+		{"ld in stock", ld(`{"price":"10","availability":"http://schema.org/InStock"}`), false},
+		{"ld one offer of two in stock", ld(`[{"price":"10","availability":"OutOfStock"},{"price":"12","availability":"InStock"}]`), false},
+		{"ld no availability", ld(`{"price":"10"}`), false},
+		{"og out of stock", `<meta property="og:title" content="T"><meta property="product:availability" content="out of stock"><meta property="product:price:amount" content="5">`, true},
+		{"og in stock", `<meta property="og:title" content="T"><meta property="product:availability" content="in stock">`, false},
+		{"ld in stock beats og", ld(`{"price":"10","availability":"InStock"}`) + `<meta property="product:availability" content="out of stock">`, false},
+		{"variants all out", `<script type="application/ld+json">{"@type":"ProductGroup","name":"G","hasVariant":[` +
+			`{"@type":"Product","offers":{"price":"10","availability":"OutOfStock"}},{"@type":"Product","offers":{"price":"11","availability":"OutOfStock"}}]}</script>`, true},
+		{"variants one in", `<script type="application/ld+json">{"@type":"ProductGroup","name":"G","hasVariant":[` +
+			`{"@type":"Product","offers":{"price":"10","availability":"OutOfStock"}},{"@type":"Product","offers":{"price":"11","availability":"InStock"}}]}</script>`, false},
+		{"sony out of stock", sony("mdr3r-s", "outOfStock"), true},
+		{"sony in stock", sony("wh1000xm6-b", "inStock"), false},
+		{"sony unknown status", sony("mdr3r-s", "lowStock"), false},
+	} {
+		m := parseMeta(c.doc, nil)
+		if m.Unavailable != c.out {
+			t.Errorf("%s: Unavailable = %v, want %v (%+v)", c.name, m.Unavailable, c.out, m)
+		}
+	}
+	if m := parseMeta(sony("mdr3r-s", "outOfStock"), nil); m.Price != "99.99" || m.Currency != "CAD" || m.Title != "MDR3R/S" {
+		t.Errorf("sony page: %+v", m)
+	}
+}
+
 func TestParseMetaTitleFallback(t *testing.T) {
 	m := parseMeta("<title>\n  Just a page \n</title>", nil)
 	if m.Title != "Just a page" || m.Image != "" || m.Price != "" {

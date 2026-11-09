@@ -49,12 +49,12 @@ func (a *App) priceRefresher(ctx context.Context) {
 // refreshPrices updates only the price: a page that gives none (shop refused,
 // out of stock) leaves the last known price in place, manual ones included.
 func (a *App) refreshPrices(ctx context.Context) {
-	type target struct{ id, url string }
+	type target struct{ id, url, title string }
 	var targets []target
 	a.store.view(func(d *Data) {
 		for _, it := range d.Items {
 			if it.Status == statusActive {
-				targets = append(targets, target{it.ID, it.URL})
+				targets = append(targets, target{it.ID, it.URL, it.Title})
 			}
 		}
 	})
@@ -73,47 +73,52 @@ func (a *App) refreshPrices(ctx context.Context) {
 		meta, err := a.readShop(fctx, tg.url)
 		cancel()
 		if err != nil {
+			log.Printf("price %s: not read: %v (%s)", siteName(tg.url), err, tg.title)
 			failed++
 			continue
 		}
-		if meta.Price == "" {
-			if meta.Unavailable {
-				a.store.update(func(d *Data) error {
-					it := d.item(tg.id)
-					if it == nil || it.Unavailable {
-						return errNoChange
-					}
-					log.Printf("price %s: now unavailable in the shop (%s)", siteName(it.URL), it.Title)
-					it.Unavailable = true
-					return nil
-				})
-				unavailable++
-			} else {
-				failed++
-			}
+		if meta.Price == "" && !meta.Unavailable {
+			log.Printf("price %s: no price on the page (%s)", siteName(tg.url), tg.title)
+			failed++
 			continue
 		}
+		// An out-of-stock page may still show a price (sony.ca): it is
+		// stored, and stays hidden from guests while the item is unavailable.
 		now := time.Now()
 		a.store.update(func(d *Data) error {
 			it := d.item(tg.id)
 			if it == nil {
 				return errNoChange
 			}
-			if it.Price == meta.Price && it.Currency == meta.Currency {
-				unchanged++
-			} else {
-				log.Printf("price %s: %s → %s (%s)", siteName(it.URL), formatPrice(it.Price, it.Currency), formatPrice(meta.Price, meta.Currency), it.Title)
-				it.Price, it.Currency = meta.Price, meta.Currency
-				changed++
+			if meta.Price != "" {
+				same := it.Price == meta.Price && it.Currency == meta.Currency
+				if !same {
+					log.Printf("price %s: %s → %s (%s)", siteName(it.URL), formatPrice(it.Price, it.Currency), formatPrice(meta.Price, meta.Currency), it.Title)
+					it.Price, it.Currency = meta.Price, meta.Currency
+				}
+				switch {
+				case meta.Unavailable: // counted below
+				case same:
+					unchanged++
+				default:
+					changed++
+				}
+				it.PriceCheckedAt = &now
 			}
 			if meta.Format != "" {
 				it.Format = meta.Format
 			}
-			if it.Unavailable {
+			switch {
+			case meta.Unavailable && !it.Unavailable:
+				log.Printf("price %s: now unavailable in the shop (%s)", siteName(it.URL), it.Title)
+				it.Unavailable = true
+			case !meta.Unavailable && it.Unavailable:
 				log.Printf("price %s: back in the shop at %s (%s)", siteName(it.URL), formatPrice(meta.Price, meta.Currency), it.Title)
 				it.Unavailable = false
 			}
-			it.PriceCheckedAt = &now
+			if meta.Unavailable {
+				unavailable++
+			}
 			return nil
 		})
 	}
