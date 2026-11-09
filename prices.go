@@ -51,8 +51,18 @@ func (a *App) refreshPrices(ctx context.Context) {
 		}
 	})
 
+	misses := map[string]string{}
+	defer func() { a.priceMisses = misses }() // drops gifts no longer checked
+
 	start := time.Now()
 	var changed, unchanged, unavailable, failed int
+	miss := func(tg target, reason string) {
+		if a.priceMisses[tg.id] != reason {
+			log.Printf("price %s: %s (%s)", siteName(tg.url), reason, tg.title)
+		}
+		misses[tg.id] = reason
+		failed++
+	}
 	for i, tg := range targets {
 		if i > 0 {
 			select {
@@ -65,14 +75,15 @@ func (a *App) refreshPrices(ctx context.Context) {
 		meta, err := a.readShop(fctx, tg.url)
 		cancel()
 		if err != nil {
-			log.Printf("price %s: not read: %v (%s)", siteName(tg.url), err, tg.title)
-			failed++
+			miss(tg, "not read: "+err.Error())
 			continue
 		}
 		if meta.Price == "" && !meta.Unavailable {
-			log.Printf("price %s: no price on the page (%s)", siteName(tg.url), tg.title)
-			failed++
+			miss(tg, "no price on the page")
 			continue
+		}
+		if _, ok := a.priceMisses[tg.id]; ok {
+			log.Printf("price %s: read again (%s)", siteName(tg.url), tg.title)
 		}
 		// An out-of-stock page may still show a price (sony.ca): it is
 		// stored, and stays hidden from guests while the item is unavailable.

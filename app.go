@@ -36,6 +36,11 @@ type App struct {
 	// readShop is the shop reader the price check uses (a.fetchMeta; tests
 	// replace it).
 	readShop func(ctx context.Context, raw string) (Meta, error)
+	// priceMisses is why the price check last failed to read each gift (by
+	// id), so a miss is logged when it starts or changes, not every hour.
+	// Only the price check goroutine uses it; it starts empty on each run of
+	// the app.
+	priceMisses map[string]string
 
 	discogs *discogsAPI
 

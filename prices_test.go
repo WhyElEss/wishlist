@@ -1,9 +1,14 @@
 package main
 
 import (
+	"bytes"
 	"context"
+	"errors"
+	"log"
 	"net/http"
 	"net/http/httptest"
+	"os"
+	"strings"
 	"testing"
 	"time"
 )
@@ -68,6 +73,51 @@ func TestRefreshPrices(t *testing.T) {
 			t.Error("PricesCheckedAt not set")
 		}
 	})
+}
+
+func TestPriceMissesLoggedOnChange(t *testing.T) {
+	var buf bytes.Buffer
+	log.SetOutput(&buf)
+	defer log.SetOutput(os.Stderr)
+
+	_, app := newTestApp(t)
+	app.priceRefreshPause = 0
+	app.store.update(func(d *Data) error {
+		d.Items = []*Item{{ID: "w", URL: "https://www.casio.com/w", Title: "Watch", Price: "99", Currency: "CAD", Quantity: 1, Status: statusActive}}
+		return nil
+	})
+	var shop Meta
+	var shopErr error
+	app.readShop = func(context.Context, string) (Meta, error) { return shop, shopErr }
+
+	for _, c := range []struct {
+		meta Meta
+		err  error
+		want string // "" = no line about the gift
+	}{
+		{Meta{}, errors.New("HTTP 403"), "price casio.com: not read: HTTP 403 (Watch)"},
+		{Meta{}, errors.New("HTTP 403"), ""},
+		{Meta{Title: "Watch"}, nil, "price casio.com: no price on the page (Watch)"},
+		{Meta{Title: "Watch"}, nil, ""},
+		{Meta{Price: "99", Currency: "CAD"}, nil, "price casio.com: read again (Watch)"},
+		{Meta{Price: "99", Currency: "CAD"}, nil, ""},
+	} {
+		buf.Reset()
+		shop, shopErr = c.meta, c.err
+		app.refreshPrices(context.Background())
+		var got []string
+		for _, line := range strings.Split(buf.String(), "\n") {
+			if i := strings.Index(line, "price casio.com"); i >= 0 {
+				got = append(got, line[i:])
+			}
+		}
+		switch {
+		case c.want == "" && len(got) > 0:
+			t.Errorf("%v %v: logged %q, want nothing", c.meta, c.err, got)
+		case c.want != "" && (len(got) != 1 || got[0] != c.want):
+			t.Errorf("%v %v: logged %q, want %q", c.meta, c.err, got, c.want)
+		}
+	}
 }
 
 func TestAmazonUnavailable(t *testing.T) {
