@@ -157,6 +157,7 @@ func (a *App) refreshRates(ctx context.Context) {
 	if len(rates) == 0 {
 		return
 	}
+	var prevDate string
 	a.store.update(func(d *Data) error {
 		if d.Rates == nil {
 			d.Rates = map[string]float64{}
@@ -164,10 +165,13 @@ func (a *App) refreshRates(ctx context.Context) {
 		for cur, v := range rates {
 			d.Rates[cur] = v
 		}
-		d.RatesDate = date
+		prevDate, d.RatesDate = d.RatesDate, date
 		return nil
 	})
-	log.Printf("rates to CAD on %s: %v", date, rates)
+	// Read before every hourly price check, but published once a day.
+	if date != prevDate {
+		log.Printf("rates to CAD on %s: %v", date, rates)
+	}
 }
 
 // readRate is one currency's latest daily rate to CAD from the Bank of

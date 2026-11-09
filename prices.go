@@ -6,22 +6,14 @@ import (
 	"time"
 )
 
-// The daily price check runs at this local hour (TZ of the container), after
-// the Pi's own updates at 02:00–05:00.
-const priceRefreshHour = 6
-
-// nextPriceRefresh is the next priceRefreshHour:00 after now, in now's zone.
+// nextPriceRefresh is the next full hour after now, in now's zone.
 func nextPriceRefresh(now time.Time) time.Time {
-	next := time.Date(now.Year(), now.Month(), now.Day(), priceRefreshHour, 0, 0, 0, now.Location())
-	if !next.After(now) {
-		next = next.AddDate(0, 0, 1)
-	}
-	return next
+	return time.Date(now.Year(), now.Month(), now.Day(), now.Hour()+1, 0, 0, 0, now.Location())
 }
 
-// priceRefresher re-reads the price of every active gift once a day. When the
-// last full pass is more than a day old (the Pi was off at 06:00), it runs one
-// shortly after start instead of waiting for the next morning.
+// priceRefresher re-reads the price of every active gift at every full hour.
+// When the last full pass is more than an hour old (the app was down), it
+// runs one shortly after start instead of waiting for the next hour.
 func (a *App) priceRefresher(ctx context.Context) {
 	// Exchange rates (for sorting by price) are read at start and before
 	// every price check.
@@ -29,7 +21,7 @@ func (a *App) priceRefresher(ctx context.Context) {
 	var last time.Time
 	a.store.view(func(d *Data) { last = d.PricesCheckedAt })
 	wait := time.Until(nextPriceRefresh(time.Now()))
-	if time.Since(last) > 24*time.Hour {
+	if time.Since(last) > time.Hour {
 		wait = time.Minute
 	}
 	for {

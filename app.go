@@ -31,7 +31,7 @@ type App struct {
 	amazon       *amazonUS
 	mail         *mailer
 
-	// priceRefreshPause spaces out shop requests in the daily price check.
+	// priceRefreshPause spaces out shop requests in the hourly price check.
 	priceRefreshPause time.Duration
 	// readShop is the shop reader the price check uses (a.fetchMeta; tests
 	// replace it).

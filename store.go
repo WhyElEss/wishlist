@@ -212,7 +212,7 @@ type Data struct {
 	// ManualOrder marks files written since Items became the display order;
 	// older files kept them oldest first and are reversed once on load.
 	ManualOrder bool `json:"manual_order"`
-	// PricesCheckedAt is when the daily price check last finished.
+	// PricesCheckedAt is when the hourly price check last finished.
 	PricesCheckedAt time.Time `json:"prices_checked_at"`
 	// Rates are Canadian dollars per unit of each other currency (Bank of
 	// Canada daily average); they are used only to sort gifts by price.

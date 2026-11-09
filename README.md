@@ -22,12 +22,12 @@ The site and the admin panel are in Russian and English (picked from the browser
 
 - Add a gift by pasting a link; title, picture and price are read from the page.
 - The gift list in the admin panel has two parts: ★ **Really want** on top and everything else below. On the site the same order holds, ★ gifts get a red frame, and reserved gifts go to the end.
-- Order of the list: manual, or sorted by date added, title (Latin titles first, then Cyrillic) or price, each ascending or descending. Prices in other currencies are compared in Canadian dollars at the Bank of Canada daily average rate (Valet API, read at start and before the daily price check); gifts without a price or temporarily unavailable go last.
+- Order of the list: manual, or sorted by date added, title (Latin titles first, then Cyrillic) or price, each ascending or descending. Prices in other currencies are compared in Canadian dollars at the Bank of Canada daily average rate (Valet API, read at start and before each price check); gifts without a price or temporarily unavailable go last.
 - Rows can always be dragged (mouse, touch or arrow keys). A drag switches the list to manual order, keeping the current order plus the change; moving a row between the two parts sets or clears ★.
 - Per-gift quantity, notes, status (active / received / already have) and shipping region (auto / US only / Canada only).
 - The admin panel shows how many units of each gift are reserved and bought, and the owner's notices name the gift.
-- Prices are re-read daily at 06:00 (container time zone), and one minute after start when the last check is more than a day old. A price is only replaced by a price actually read from the shop; manual prices for shops that cannot be read stay as they are. The container log names every gift the check could not read and why (HTTP status, timeout, or no price on the page).
-- When a shop says an item is out of stock, guests see "Temporarily unavailable in store" instead of a price until the daily check finds it in stock again. Some shops keep showing a price for items they cannot sell (sony.ca); the price is still stored, just hidden.
+- Prices are re-read every hour on the hour (container time zone), and one minute after start when the last check is more than an hour old. A check takes a few seconds per gift (requests are spaced 5 seconds apart). A price is only replaced by a price actually read from the shop; manual prices for shops that cannot be read stay as they are. The container log names every gift the check could not read and why (HTTP status, timeout, or no price on the page).
+- When a shop says an item is out of stock, guests see "Temporarily unavailable in store" instead of a price until the hourly check finds it in stock again. Some shops keep showing a price for items they cannot sell (sony.ca); the price is still stored, just hidden.
 - Email notices to the owner about reservations, purchases, cancellations and expiries, in Russian or English (a setting; Russian by default).
 - Shipping addresses for the US and Canada are edited in the settings as separate fields (name, two address lines, city, province or state, postal code, country). They are stored in the data volume, not in the repository.
 
@@ -74,7 +74,7 @@ Images are downloaded once and served from the app, so cards do not depend on th
 | `fetch.go` | Page fetching and OpenGraph / JSON-LD parsing, image download, region detection |
 | `amazon.go` | amazon.com session with a US ZIP; amazon.ca; shop dispatch |
 | `discogs.go` | Discogs API reader |
-| `prices.go` | Daily price check |
+| `prices.go` | Hourly price check |
 | `sortorder.go` | Sort orders of the gift list, Bank of Canada exchange rates |
 | `notify.go` | SMTP client (STARTTLS only), owner notices |
 | `auth.go` | PBKDF2 password hash, HMAC-signed admin session cookie |
@@ -185,7 +185,7 @@ See [.env.example](.env.example).
 | `ADMIN_PASSWORD_HASH` | Required. Output of `wishlist hashpw` (PBKDF2-SHA256, no `$` characters) |
 | `BASE_URL` | Public origin, e.g. `https://wishlist.example.com`; used in email links and accepted as the Origin of form posts. Required when mail is on |
 | `HOST_PORT` | Host port for the LAN (default 8095) |
-| `TZ` | Time zone for dates and the 06:00 price check |
+| `TZ` | Time zone for dates and logs |
 | `TRUST_PROXY_HEADERS` | Read the client IP and country from `CF-Connecting-IP` / `CF-IPCountry` (default `true`) |
 | `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD`, `SMTP_FROM` | Outgoing mail; see above |
 | `NOTIFY_EMAIL` | Where the owner's notices go; empty means the `SMTP_FROM` address |
