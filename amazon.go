@@ -221,13 +221,24 @@ func isAmazonCA(u *url.URL) bool {
 // fetchMeta picks the fetcher for the shop. amazon.ca product pages need no
 // delivery-location change from Canada; they are read with the browser UA
 // only, since the crawler UA gets HTTP 500 there.
+//
+// amazon.ca pages go through curl when the image has it: on 2026-11-09 the
+// same full price check from the Pi read 11 of 11 amazon.ca pages through
+// curl and 5 of 11 through Go's HTTP client, which got a "Click the button
+// below to continue shopping" page instead (HTTP 200, title "Amazon.ca").
 func (a *App) fetchMeta(ctx context.Context, raw string) (Meta, error) {
 	u, err := url.Parse(raw)
 	switch {
 	case err == nil && isAmazonUS(u):
 		return a.amazon.fetchMeta(ctx, raw)
 	case err == nil && isAmazonCA(u):
-		page, final, err := fetchPage(ctx, a.client, raw, browserUA)
+		var page string
+		var final *url.URL
+		if curlPath != "" {
+			page, final, err = curlPage(ctx, raw, browserUA)
+		} else {
+			page, final, err = fetchPage(ctx, a.client, raw, browserUA)
+		}
 		if err != nil {
 			return Meta{}, err
 		}

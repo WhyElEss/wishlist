@@ -12,8 +12,9 @@ RUN go vet ./... && \
     CGO_ENABLED=0 go build -ldflags "-s -w -X main.version=${VERSION}" -trimpath -o /out/wishlist .
 
 FROM alpine:3.21
-# ca-certificates: TLS to shops and Telegram; tzdata: TZ= for dates and logs.
-RUN apk add --no-cache ca-certificates tzdata
+# ca-certificates: TLS to shops; tzdata: TZ= for dates and logs; curl: reads
+# amazon.ca pages, which answer Go's HTTP client with a stub page.
+RUN apk add --no-cache ca-certificates tzdata curl
 COPY --from=build /out/wishlist /usr/local/bin/wishlist
 
 # Owned by 1000:1000 so a fresh named volume inherits a writable /data.

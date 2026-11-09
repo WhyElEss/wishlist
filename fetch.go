@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"cmp"
 	"context"
 	"encoding/json"
@@ -10,10 +11,12 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"os/exec"
 	"regexp"
 	"slices"
 	"strconv"
 	"strings"
+	"time"
 )
 
 const (
@@ -130,6 +133,51 @@ func fetchMetaUA(ctx context.Context, c *http.Client, raw, ua string) (Meta, err
 	m := parseMeta(page, final)
 	m.FinalURL = final
 	return m, nil
+}
+
+// curlPath is the curl binary in the image; empty where there is none.
+var curlPath, _ = exec.LookPath("curl")
+
+const curlMark = "\n--curl-status--"
+
+// curlPage is fetchPage done by curl, for shops that answer Go's HTTP client
+// differently (amazon.ca).
+func curlPage(ctx context.Context, raw, ua string) (string, *url.URL, error) {
+	ctx, cancel := context.WithTimeout(ctx, 25*time.Second)
+	defer cancel()
+	cmd := exec.CommandContext(ctx, curlPath, "-sS", "-L", "--max-redirs", "10", "--compressed",
+		"-A", ua,
+		"-H", "Accept: text/html,application/xhtml+xml;q=0.9,*/*;q=0.8",
+		"-H", "Accept-Language: en-US,en;q=0.9",
+		"-w", curlMark+"%{http_code} %{url_effective}",
+		"--url", raw)
+	var stderr bytes.Buffer
+	cmd.Stderr = &stderr
+	out, err := cmd.Output()
+	if err != nil {
+		return "", nil, fmt.Errorf("curl: %v: %s", err, strings.TrimSpace(stderr.String()))
+	}
+	i := bytes.LastIndex(out, []byte(curlMark))
+	if i < 0 {
+		return "", nil, errors.New("curl: no status line")
+	}
+	var code int
+	var effective string
+	if _, err := fmt.Sscanf(string(out[i+len(curlMark):]), "%d %s", &code, &effective); err != nil {
+		return "", nil, fmt.Errorf("curl: status line: %w", err)
+	}
+	if code >= 400 {
+		return "", nil, fmt.Errorf("HTTP %d", code)
+	}
+	final, err := url.Parse(effective)
+	if err != nil {
+		return "", nil, err
+	}
+	body := out[:i]
+	if len(body) > maxPageBytes {
+		body = body[:maxPageBytes]
+	}
+	return string(body), final, nil
 }
 
 func fetchPage(ctx context.Context, c *http.Client, raw, ua string) (string, *url.URL, error) {

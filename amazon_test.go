@@ -83,6 +83,34 @@ func TestAmazonUSSetsZip(t *testing.T) {
 	}
 }
 
+func TestCurlPage(t *testing.T) {
+	if curlPath == "" {
+		t.Skip("no curl")
+	}
+	shop := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case "/dp/old":
+			http.Redirect(w, r, "/dp/new", http.StatusMovedPermanently)
+		case "/dp/new":
+			if r.UserAgent() != browserUA || r.Header.Get("Accept-Language") == "" {
+				t.Errorf("headers: %v", r.Header)
+			}
+			w.Write([]byte(`<span id="productTitle">Kindle</span>`)) // no trailing newline
+		default:
+			http.Error(w, "Access Denied", http.StatusForbidden)
+		}
+	}))
+	defer shop.Close()
+
+	page, final, err := curlPage(context.Background(), shop.URL+"/dp/old", browserUA)
+	if err != nil || page != `<span id="productTitle">Kindle</span>` || final.Path != "/dp/new" {
+		t.Errorf("redirected page: %q %v %v", page, final, err)
+	}
+	if _, _, err := curlPage(context.Background(), shop.URL+"/blocked", browserUA); err == nil || err.Error() != "HTTP 403" {
+		t.Errorf("blocked page: %v", err)
+	}
+}
+
 func TestAmazonMetaCA(t *testing.T) {
 	page := `<html><head><title>Amazon.ca: Kindle Paperwhite 16GB</title></head><body>
 <span id="productTitle" class="a-size-large"> Amazon Kindle Paperwhite 16GB (2024 model) – 7&#34; display </span>

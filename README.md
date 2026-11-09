@@ -42,7 +42,7 @@ The site and the admin panel are in Russian and English (picked from the browser
 | Shop | How | Notes |
 |---|---|---|
 | amazon.com | Product page in a cookie session with a US delivery ZIP | Seen from Canada, amazon.com hides prices of items that do not ship there. The app sets the ZIP through Amazon's own "Deliver to" dialog once per session. The ZIP is the postal code of the US address in the settings (10001 if empty). |
-| amazon.ca | Product page, browser User-Agent | Price in CAD. |
+| amazon.ca | Product page, browser User-Agent, fetched with `curl` (installed in the image) | Price in CAD. In two full checks run back to back from the same host on 2026-11-09, curl read 11 of 11 pages; Go's own HTTP client read 5 of 11 and got a "Click the button below to continue shopping" page (HTTP 200) for the rest. Without curl (e.g. `go run` on a machine that lacks it) Go's client is used. |
 | Amazon, no offer | Markers `unqualifiedBuyBox` / `buybox-see-all-buying-choices` or "Currently unavailable" | Shown as temporarily unavailable; the last known price is kept but hidden. |
 | Discogs | Public API at `api.discogs.com` (no key) | Pages are behind a Cloudflare challenge. `/master/…` and `/release/…` and `/sell/release/…` show the cheapest marketplace offer in USD as "from $X"; `/shop/item/…` and `/sell/item/…` show the listing's fixed price. |
 | Any other shop | OpenGraph tags and schema.org `Product` JSON-LD | Tried with a browser User-Agent and with the Facebook preview crawler's. |
@@ -192,7 +192,7 @@ See [.env.example](.env.example).
 
 ## Development
 
-There are no dependencies beyond the Go standard library. CI runs `gofmt`, `go vet`, `go test -race` and a `linux/arm64` build on every push.
+There are no dependencies beyond the Go standard library; the Docker image adds the `curl` program for amazon.ca pages. CI runs `gofmt`, `go vet`, `go test -race` and a `linux/arm64` build on every push.
 
 ```bash
 go test ./...
