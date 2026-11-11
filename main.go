@@ -49,6 +49,7 @@ func main() {
 	defer stop()
 	go app.sweeper(ctx)
 	go app.priceRefresher(ctx)
+	go app.shrinkStoredImages(ctx)
 	go func() {
 		<-ctx.Done()
 		sctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)

@@ -28,6 +28,10 @@ type cardView struct {
 	Discogs   bool
 	Grading   grading
 	MineToken string
+
+	// ImgW, ImgH: the picture's pixel size for the list's img tag (0 =
+	// unknown), so cards keep their layout while pictures load.
+	ImgW, ImgH int
 }
 
 func makeCard(it *Item, now time.Time, lang string) cardView {
@@ -138,6 +142,9 @@ func (a *App) handleIndex(w http.ResponseWriter, r *http.Request) {
 		}
 		return cards[i].Priority > cards[j].Priority
 	})
+	for i := range cards {
+		cards[i].ImgW, cards[i].ImgH = a.imageSize(cards[i].Image)
+	}
 	p := indexPage{base: a.base(r, lang, ""), Intro: intro, Cards: cards}
 	if r.URL.Query().Get("m") == "cancelled" {
 		p.Flash = tr(lang, "cancelled")

@@ -549,7 +549,8 @@ func TestIconsAndLinkPreview(t *testing.T) {
 
 	resp, _ = http.Get(srv.URL + "/robots.txt")
 	robots := body(t, resp)
-	if !strings.Contains(robots, "User-agent: Twitterbot") || !strings.Contains(robots, "User-agent: *\nDisallow: /\n") {
+	if !strings.Contains(robots, "User-agent: *\nAllow: /\n") || !strings.Contains(robots, "Disallow: /r/\n") ||
+		!strings.Contains(robots, "Disallow: /admin\n") || strings.Contains(robots, "Disallow: /\n") {
 		t.Errorf("robots.txt:\n%s", robots)
 	}
 }

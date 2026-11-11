@@ -518,13 +518,16 @@ var imageExt = map[string]string{
 	"image/avif": ".avif",
 }
 
-func downloadImage(ctx context.Context, c *http.Client, src, referer string) ([]byte, string, error) {
+// imageAccept is what downloadImage asks for first.
+const imageAccept = "image/avif,image/webp,image/png,image/jpeg,image/*;q=0.8"
+
+func downloadImage(ctx context.Context, c *http.Client, src, referer, accept string) ([]byte, string, error) {
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, src, nil)
 	if err != nil {
 		return nil, "", err
 	}
 	req.Header.Set("User-Agent", browserUA)
-	req.Header.Set("Accept", "image/avif,image/webp,image/png,image/jpeg,image/*;q=0.8")
+	req.Header.Set("Accept", accept)
 	if referer != "" {
 		req.Header.Set("Referer", referer)
 	}

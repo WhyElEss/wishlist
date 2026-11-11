@@ -2,12 +2,13 @@
 {{if .Intro}}<p class="intro">{{.Intro}}</p>{{end}}
 {{if not .Cards}}<p class="empty">{{t .Lang "empty"}}</p>{{end}}
 <div class="grid">
-{{range .Cards}}
+{{range $i, $c := .Cards}}
   {{/* The whole card leads to the next step; shop links come after it. */}}
   {{$href := ""}}{{if .MineToken}}{{$href = print "/r/" .MineToken}}{{else if .Available}}{{$href = print "/item/" .ID}}{{end}}
   <article class="card{{if .Priority}} hot{{end}}{{if .MineToken}} mine{{else if not .Available}} taken{{end}}{{if $href}} linked{{end}}">
     <div class="thumb">
-      {{if .Image}}<img src="/img/{{.Image}}" alt="" loading="lazy">{{else}}<span class="noimg">🎁</span>{{end}}
+      {{/* The first cards are on screen at once: no lazy loading, the first picture first. */}}
+      {{if .Image}}<img src="/img/{{.Image}}" alt=""{{if .ImgW}} width="{{.ImgW}}" height="{{.ImgH}}"{{end}}{{if eq $i 0}} fetchpriority="high"{{else if ge $i 4}} loading="lazy"{{end}}>{{else}}<span class="noimg">🎁</span>{{end}}
     </div>
     <div class="body">
       {{if .Priority}}<span class="badge hot">★ {{t $.Lang "priority_high"}}</span>{{end}}

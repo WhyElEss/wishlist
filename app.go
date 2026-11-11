@@ -12,6 +12,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -46,6 +47,9 @@ type App struct {
 
 	// ratesBase is the Bank of Canada Valet API (a test server in tests).
 	ratesBase string
+
+	// imageSizes caches imageSize by file name.
+	imageSizes sync.Map
 }
 
 func newApp(cfg Config) (*App, error) {
@@ -94,10 +98,13 @@ func (a *App) routes() http.Handler {
 	mux := http.NewServeMux()
 
 	static, _ := fs.Sub(assets, "static")
-	mux.Handle("GET /static/", cacheFor(24*time.Hour, http.StripPrefix("/static/", http.FileServerFS(static))))
+	mux.Handle("GET /static/", cacheStatic(http.StripPrefix("/static/", http.FileServerFS(static))))
 	mux.HandleFunc("GET /img/{name}", a.handleImage)
 	mux.HandleFunc("GET /robots.txt", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+		// Cloudflare caches .txt files; without a lifetime of our own an old
+		// copy outlives a change.
+		w.Header().Set("Cache-Control", "public, max-age=3600")
 		w.Write([]byte(robotsTxt))
 	})
 	// Browsers and Safari's Favorites look for these at the site root.
@@ -135,24 +142,36 @@ func (a *App) routes() http.Handler {
 	return a.secure(mux)
 }
 
-// robotsTxt keeps search engines out but lets link-preview crawlers read the
-// public pages, so shared links get a card. Reservation links and the admin
-// stay closed to them too.
-const robotsTxt = `User-agent: Twitterbot
-User-agent: facebookexternalhit
-User-agent: TelegramBot
-User-agent: Slackbot
-User-agent: Discordbot
-User-agent: WhatsApp
-User-agent: LinkedInBot
-User-agent: Cardyb
+// robotsTxt opens the public pages (the list and each gift's page) to search
+// engines and link-preview crawlers. Reservation pages (secret links with the
+// shipping address), the admin and the language switch (a redirect that sets
+// a cookie) stay closed; they also answer with noindex (noIndexPath).
+const robotsTxt = `User-agent: *
 Allow: /
 Disallow: /admin
 Disallow: /r/
-
-User-agent: *
-Disallow: /
+Disallow: /lang/
 `
+
+// noIndexPath: pages search engines must not index even when they reach them.
+func noIndexPath(p string) bool {
+	return p == "/admin" || strings.HasPrefix(p, "/admin/") || strings.HasPrefix(p, "/r/") || strings.HasPrefix(p, "/lang/")
+}
+
+// cacheStatic: files under /static/ are linked with ?v=<version>, so a
+// versioned URL never changes content and is cached for a year; without
+// ?v= (the icons) for a day.
+func cacheStatic(h http.Handler) http.Handler {
+	day := cacheFor(24*time.Hour, h)
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Query().Get("v") != "" {
+			w.Header().Set("Cache-Control", "public, max-age=31536000, immutable")
+			h.ServeHTTP(w, r)
+			return
+		}
+		day.ServeHTTP(w, r)
+	})
+}
 
 func cacheFor(d time.Duration, h http.Handler) http.Handler {
 	maxAge := int(d.Seconds())
@@ -167,7 +186,13 @@ func cacheFor(d time.Duration, h http.Handler) http.Handler {
 func (a *App) secure(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		hd := w.Header()
-		hd.Set("X-Robots-Tag", "noindex, nofollow")
+		if noIndexPath(r.URL.Path) {
+			hd.Set("X-Robots-Tag", "noindex, nofollow")
+		}
+		if isHTTPS(r) {
+			hd.Set("Strict-Transport-Security", "max-age=31536000")
+		}
+		hd.Set("Cross-Origin-Opener-Policy", "same-origin")
 		hd.Set("X-Content-Type-Options", "nosniff")
 		hd.Set("X-Frame-Options", "DENY")
 		// same-origin: reservation links carry a secret token and must never
@@ -249,6 +274,9 @@ type base struct {
 	OGTitle     string
 	Description string
 }
+
+// NoIndex: the page carries a robots noindex tag (admin, reservation pages).
+func (b base) NoIndex() bool { return b.Admin || noIndexPath(b.Path) }
 
 func (a *App) base(r *http.Request, lang, pageTitle string) base {
 	var site, siteEN, introEN string

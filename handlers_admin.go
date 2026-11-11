@@ -211,9 +211,10 @@ func parseShopURL(raw string) (*url.URL, bool) {
 	return u, true
 }
 
-// saveImage downloads src into the images dir and returns the new file name.
+// saveImage downloads src, shrunk, into the images dir and returns the new
+// file name.
 func (a *App) saveImage(ctx context.Context, itemID, src, referer string) (string, error) {
-	b, ext, err := downloadImage(ctx, a.client, src, referer)
+	b, ext, err := fetchImage(ctx, a.client, src, referer)
 	if err != nil {
 		return "", err
 	}

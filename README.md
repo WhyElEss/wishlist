@@ -34,7 +34,10 @@ The site and the admin panel are in Russian and English (picked from the browser
 **Site**
 
 - Two buttons in the header on every page, admin panel included: the other language (RU / EN; a cookie, else the browser's language) and the theme, which cycles auto → light → dark. Auto follows the system; a chosen theme is kept in the browser's `localStorage` and applied in `<head>` before the page is drawn.
-- `noindex` for search engines; link-preview crawlers (Twitter, Facebook, Telegram, Bluesky and others) may read the public pages, so shared links get a card.
+- Open to search engines and link-preview crawlers: `robots.txt` allows the gift list and the gift pages and closes `/admin`, `/r/` (reservation pages, which hold the shipping address) and `/lang/`; those pages also answer with `noindex`. There is no sitemap: the list is the one page worth finding, and gift pages come and go.
+- Pictures are shrunk when they are downloaded: at most 640 pixels on the longest side (a list card is about 300 CSS pixels wide, doubled for Retina screens), re-encoded as JPEG quality 75 on a white background, and kept as downloaded when that would not be smaller. WebP and AVIF, which Go's standard library cannot decode, are asked for again as JPEG or PNG, which many shop CDNs send on request. Pictures stored by older versions are shrunk once at start-up. On the 27 pictures of the live list this took them from 3.6 MB to 1.2 MB.
+- Card pictures carry their width and height, so the layout does not jump while they load; the first four are loaded at once (the first with high priority), the rest lazily.
+- Versioned files under `/static/` (`?v=<commit>`) are cached for a year, pictures for good (each download gets a new file name). HTTPS responses carry `Strict-Transport-Security` (one year, this host only); every response carries `Cross-Origin-Opener-Policy: same-origin`.
 - Open Graph card (1200×630, English), favicon, and an `apple-touch-icon` for Safari Favorites and the iOS home screen.
 - Rate limits on reservations (5 per hour per IP) and admin logins (5 per 15 minutes per IP).
 
@@ -68,13 +71,14 @@ Images are downloaded once and served from the app, so cards do not depend on th
 |---|---|
 | `main.go` | Start-up, graceful shutdown, `hashpw` sub-command |
 | `config.go` | Environment variables |
-| `app.go` | Routes, security headers and same-origin check for POSTs, rendering, `robots.txt`, reservation expiry sweep |
+| `app.go` | Routes, security and caching headers, same-origin check for POSTs, rendering, `robots.txt` and `noindex`, reservation expiry sweep |
 | `store.go` | Data model and the JSON store: one mutex, atomic file replace; settings and addresses |
 | `handlers_public.go` | List, reserve, reservation page, bought, cancel, language switch, images |
 | `handlers_admin.go` | Login, gifts, ordering, refresh from the shop, settings, test email |
 | `fetch.go` | Page fetching and OpenGraph / JSON-LD parsing, image download, region detection |
 | `amazon.go` | amazon.com session with a US ZIP; amazon.ca; shop dispatch |
 | `discogs.go` | Discogs API reader |
+| `image.go` | Picture shrinking (standard library only: area-average downscale, JPEG encode), one-time shrinking of older pictures, picture sizes for the list |
 | `prices.go` | Hourly price check |
 | `sortorder.go` | Sort orders of the gift list, Bank of Canada exchange rates |
 | `notify.go` | SMTP client (STARTTLS only), owner notices |

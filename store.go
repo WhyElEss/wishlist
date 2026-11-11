@@ -219,6 +219,9 @@ type Data struct {
 	Rates map[string]float64 `json:"rates,omitempty"`
 	// RatesDate is the Bank of Canada date of Rates.
 	RatesDate string `json:"rates_date,omitempty"`
+	// ImagesShrunk is set once pictures stored before they were shrunk on
+	// download have been shrunk (see shrinkStoredImages).
+	ImagesShrunk int `json:"images_shrunk,omitempty"`
 }
 
 // reorder puts the items with the given IDs first, in that order; items not
