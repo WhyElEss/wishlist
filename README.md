@@ -33,6 +33,7 @@ The site and the admin panel are in Russian and English (picked from the browser
 
 **Site**
 
+- Two buttons in the header on every page, admin panel included: the other language (RU / EN; a cookie, else the browser's language) and the theme, which cycles auto → light → dark. Auto follows the system; a chosen theme is kept in the browser's `localStorage` and applied in `<head>` before the page is drawn.
 - `noindex` for search engines; link-preview crawlers (Twitter, Facebook, Telegram, Bluesky and others) may read the public pages, so shared links get a card.
 - Open Graph card (1200×630, English), favicon, and an `apple-touch-icon` for Safari Favorites and the iOS home screen.
 - Rate limits on reservations (5 per hour per IP) and admin logins (5 per 15 minutes per IP).
@@ -82,7 +83,7 @@ Images are downloaded once and served from the app, so cards do not depend on th
 | `i18n.go` | Russian and English texts of the public site, price and date formatting |
 | `i18n_admin.go` | Russian and English texts of the admin panel; notes on what a shop page could not fill in |
 | `tools/backup.sh` | Nightly backup of the data volume, `docker-compose.yml` and `.env` (cron, outside the binary) |
-| `templates/`, `static/` | HTML templates, CSS, a small script for copying, tabs and drag ordering; embedded into the binary |
+| `templates/`, `static/` | HTML templates, CSS, a small script for copying, tabs and drag ordering, and `theme.js` for the theme button; embedded into the binary |
 
 Data lives in `wishlist.json` in the data volume. The gift list is in display order; reservations sit inside each gift with their secret token, the guest's email (kept until the gift is marked as bought) and expiry. A reservation is made under the store lock, so two guests can never take the same last unit.
 
