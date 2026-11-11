@@ -57,10 +57,13 @@ func TestAdminBilingual(t *testing.T) {
 		if !strings.Contains(page, ">Settings</a>") || !strings.Contains(page, "Log out") {
 			t.Errorf("English %s lacks the admin nav", path)
 		}
+		if !strings.Contains(page, `>RU</a>`) || !strings.Contains(page, `data-dark="Theme: dark"`) {
+			t.Errorf("English %s lacks the language or theme button", path)
+		}
 	}
 	for _, path := range pages {
-		if page := getLang(t, admin, srv.URL+path, "ru"); !strings.Contains(page, ">Настройки</a>") || !strings.Contains(page, ">English</a>") {
-			t.Errorf("Russian %s lacks the admin nav or the language switch", path)
+		if page := getLang(t, admin, srv.URL+path, "ru"); !strings.Contains(page, ">Настройки</a>") || !strings.Contains(page, ">EN</a>") || !strings.Contains(page, `data-dark="Тема: тёмная"`) {
+			t.Errorf("Russian %s lacks the admin nav, the language or the theme button", path)
 		}
 	}
 

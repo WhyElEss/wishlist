@@ -16,10 +16,12 @@
   --err-bg: #fef2f2;
   --err-text: #991b1b;
   --radius: 14px;
-  color-scheme: light dark;
+  color-scheme: light;
 }
+/* Dark colours: from the system unless the visitor chose a theme with the
+   header button (static/theme.js sets data-theme on <html>). */
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not([data-theme="light"]) {
     --bg: #171513;
     --surface: #221f1c;
     --text: #eeebe6;
@@ -36,7 +38,27 @@
     --warn-text: #fde68a;
     --err-bg: #2f1414;
     --err-text: #fecaca;
+    color-scheme: dark;
   }
+}
+:root[data-theme="dark"] {
+  --bg: #171513;
+  --surface: #221f1c;
+  --text: #eeebe6;
+  --muted: #a39d94;
+  --line: #36322d;
+  --accent: #f97316;
+  --accent-text: #1a0f06;
+  --mine: #2dd4bf;
+  --danger: #f87171;
+  --hot: #ef4444;
+  --ok-bg: #0d2a22;
+  --ok-text: #a7f3d0;
+  --warn-bg: #2d2410;
+  --warn-text: #fde68a;
+  --err-bg: #2f1414;
+  --err-text: #fecaca;
+  color-scheme: dark;
 }
 
 * { box-sizing: border-box; }
@@ -60,6 +82,18 @@ nav a { color: var(--muted); text-decoration: none; }
 nav a:hover { color: var(--text); }
 form.inline { display: inline; margin: 0; }
 button.link { background: none; border: 0; padding: 0; color: var(--muted); font: inherit; cursor: pointer; }
+/* The language button (shows the other language) and the theme button
+   (auto → light → dark, static/theme.js), side by side, one shape. */
+.head-btns { display: flex; gap: .3rem; }
+.head-btn { display: inline-flex; align-items: center; justify-content: center; box-sizing: border-box; height: 1.6rem; min-width: 1.9rem; padding: 0 .4rem; border: 0; border-radius: 6px; background: var(--bg); color: var(--text); font-family: inherit; font-size: .8rem; font-weight: 600; line-height: 1; text-decoration: none; cursor: pointer; }
+.head-btn:hover { color: var(--accent); }
+.head-btn svg { width: 1rem; height: 1rem; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; }
+#theme-btn svg { display: none; }
+#theme-btn .fill { fill: currentColor; stroke: none; }
+:root[data-theme-choice="auto"] #theme-btn .i-auto,
+:root:not([data-theme-choice]) #theme-btn .i-auto,
+:root[data-theme-choice="light"] #theme-btn .i-light,
+:root[data-theme-choice="dark"] #theme-btn .i-dark { display: block; }
 
 .intro { font-size: 1.1rem; color: var(--muted); max-width: 720px; margin: 0 0 24px; white-space: pre-line; }
 .empty { color: var(--muted); }

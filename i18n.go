@@ -12,7 +12,10 @@ import (
 
 var messages = map[string]map[string]string{
 	"ru": {
-		"lang_switch":           "English",
+		"lang_name":             "Русский",
+		"theme_auto":            "Тема: как в системе",
+		"theme_light":           "Тема: светлая",
+		"theme_dark":            "Тема: тёмная",
 		"empty":                 "Список пока пуст.",
 		"gift_this":             "Подарю это",
 		"taken":                 "Уже кто-то дарит",
@@ -81,7 +84,10 @@ var messages = map[string]map[string]string{
 		"mail_reminder_body":    "Здравствуйте!\n\nНесколько дней назад вы выбрали подарок в вишлисте %[2]s: %[1]s. Он отмечен за вами до %[3]s.\n\nЕсли вы его уже купили, отметьте это на странице подарка, и он останется за вами:\n%[4]s\n\nЕсли передумали, там же можно снять выбор, и подарок станет доступен другим.\n",
 	},
 	"en": {
-		"lang_switch":           "Русский",
+		"lang_name":             "English",
+		"theme_auto":            "Theme: follows the system",
+		"theme_light":           "Theme: light",
+		"theme_dark":            "Theme: dark",
 		"empty":                 "The list is empty for now.",
 		"gift_this":             "I’ll gift this",
 		"taken":                 "Someone is gifting this",
