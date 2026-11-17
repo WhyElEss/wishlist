@@ -45,7 +45,15 @@
       <td>{{.PriceText}}</td>
       <td>{{.RegionText}}</td>
       <td>{{.Quantity}}</td>
-      <td>{{.StatusText}}</td>
+      <td>
+        {{/* app.js saves on change and hides the button; without it the button saves. */}}
+        <form method="post" action="/admin/items/{{.ID}}/status" class="statusform">
+          <select name="status" aria-label="{{tf $.Page.Lang "status_label" .Title}}">
+            {{$cur := .Status}}{{range $.Page.Statuses}}<option value="{{.}}"{{if eq . $cur}} selected{{end}}>{{t $.Page.Lang (print "status_" .)}}</option>{{end}}
+          </select>
+          <button class="btn">{{t $.Page.Lang "status_save"}}</button>
+        </form>
+      </td>
       <td>{{.ReservedText}}</td>
     </tr>
 {{end}}{{end}}

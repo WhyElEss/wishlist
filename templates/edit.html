@@ -29,6 +29,7 @@
       <label>{{t .Lang "f_status"}}
         <select name="status">
           <option value="active"{{if eq .Item.Status "active"}} selected{{end}}>{{t .Lang "f_status_active"}}</option>
+          <option value="private"{{if eq .Item.Status "private"}} selected{{end}}>{{t .Lang "f_status_private"}}</option>
           <option value="received"{{if eq .Item.Status "received"}} selected{{end}}>{{t .Lang "f_status_received"}}</option>
           <option value="owned"{{if eq .Item.Status "owned"}} selected{{end}}>{{t .Lang "f_status_owned"}}</option>
         </select>

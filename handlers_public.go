@@ -23,6 +23,8 @@ type cardView struct {
 	Priority                                      int
 	Quantity, Left                                int
 	Available, Unavailable                        bool
+	// Private: shown only to the signed-in owner, framed green, links to the shop.
+	Private bool
 
 	// Discogs gifts: Mint/NM only; Grading holds the definitions.
 	Discogs   bool
@@ -49,6 +51,7 @@ func makeCard(it *Item, now time.Time, lang string) cardView {
 		Available: it.available(now),
 
 		Unavailable: it.Unavailable,
+		Private:     it.Status == statusPrivate,
 	}
 	if u, err := url.Parse(it.URL); err == nil && isDiscogs(u) {
 		c.Discogs, c.Grading = true, gradingFor(lang, it.Format)
@@ -117,12 +120,13 @@ func (a *App) handleIndex(w http.ResponseWriter, r *http.Request) {
 		mine[t] = true
 	}
 	now := time.Now()
+	owner := a.isAdmin(r)
 	var cards []cardView
 	var intro string
 	a.store.view(func(d *Data) {
 		intro = d.Settings.intro(lang)
 		for _, it := range sortedItems(d.Items, d.Settings.SortOrder, d.Rates) {
-			if it.Status != statusActive {
+			if it.Status != statusActive && !(owner && it.Status == statusPrivate) {
 				continue
 			}
 			c := makeCard(it, now, lang)
@@ -134,11 +138,12 @@ func (a *App) handleIndex(w http.ResponseWriter, r *http.Request) {
 			cards = append(cards, c)
 		}
 	})
-	// Gifts that can still be taken first; among them "really want" (★) above
-	// the rest; within each group the order chosen in the admin panel.
+	// Gifts that can still be taken first (the owner's private ones among
+	// them); among them "really want" (★) above the rest; within each group
+	// the order chosen in the admin panel.
 	sort.SliceStable(cards, func(i, j int) bool {
-		if cards[i].Available != cards[j].Available {
-			return cards[i].Available
+		if oi, oj := cards[i].Available || cards[i].Private, cards[j].Available || cards[j].Private; oi != oj {
+			return oi
 		}
 		return cards[i].Priority > cards[j].Priority
 	})

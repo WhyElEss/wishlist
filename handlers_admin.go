@@ -15,7 +15,10 @@ import (
 	"time"
 )
 
-var validStatus = map[string]bool{statusActive: true, statusReceived: true, statusOwned: true}
+var validStatus = map[string]bool{statusActive: true, statusPrivate: true, statusReceived: true, statusOwned: true}
+
+// statuses is the order of the status menu in the admin list.
+var statuses = []string{statusActive, statusPrivate, statusReceived, statusOwned}
 
 // adminBase is the page frame in the admin's language; titleKey is a message key.
 func (a *App) adminBase(r *http.Request, titleKey string) base {
@@ -81,8 +84,8 @@ func (a *App) handleLogout(w http.ResponseWriter, r *http.Request) {
 // ---- list ----
 
 type adminRow struct {
-	ID, Title, Image, PriceText, Site, RegionText, StatusText, Status, ReservedText string
-	Priority, Quantity                                                              int
+	ID, Title, Image, PriceText, Site, RegionText, Status, ReservedText string
+	Priority, Quantity                                                  int
 }
 
 type adminPage struct {
@@ -91,6 +94,7 @@ type adminPage struct {
 	Rows       []adminRow
 	SortOrder  string
 	SortOrders []string
+	Statuses   []string
 }
 
 func regionText(lang, code string) string {
@@ -104,14 +108,13 @@ func (a *App) handleAdmin(w http.ResponseWriter, r *http.Request) {
 	p := adminPage{base: a.adminBase(r, "nav_gifts")}
 	lang, now := p.Lang, time.Now()
 	a.store.view(func(d *Data) {
-		p.SortOrder, p.SortOrders = d.Settings.SortOrder, sortOrders
+		p.SortOrder, p.SortOrders, p.Statuses = d.Settings.SortOrder, sortOrders, statuses
 		for _, it := range adminOrder(d) {
 			row := adminRow{
 				ID: it.ID, Title: it.Title, Image: it.Image,
 				PriceText:  itemPrice(it, lang),
 				Site:       siteName(it.URL),
 				RegionText: regionText(lang, it.Region),
-				StatusText: tr(lang, "status_"+it.Status),
 				Status:     it.Status,
 				Priority:   it.Priority,
 				Quantity:   it.Quantity,
@@ -392,18 +395,13 @@ func (a *App) handleEdit(w http.ResponseWriter, r *http.Request) {
 		it.Currency = strings.ToUpper(limit(r.FormValue("currency"), 3))
 		it.Region = region
 		it.Quantity = qty
-		it.Status = status
+		setStatus(it, status)
 		it.Priority = priority
 		it.Notes = limit(r.FormValue("notes"), 1000)
 		it.FetchNote, it.Fetch = "", imageNote
 		if imageChanged {
 			oldImage = it.Image
 			it.Image, it.ImageSrc = newImage, imageSrc
-		}
-		if status != statusActive {
-			for _, res := range it.Reservations {
-				res.Email = ""
-			}
 		}
 		it.UpdatedAt = time.Now()
 		return nil
@@ -420,6 +418,48 @@ func (a *App) handleEdit(w http.ResponseWriter, r *http.Request) {
 	}
 	a.removeImage(oldImage)
 	redirectMsg(w, r, "/admin/items/"+id, "saved")
+}
+
+// setStatus changes a gift's status. A gift guests can no longer see sends no
+// more reminders: the reservations' emails are dropped.
+func setStatus(it *Item, status string) {
+	it.Status = status
+	if status != statusActive {
+		for _, res := range it.Reservations {
+			res.Email = ""
+		}
+	}
+}
+
+// handleStatus saves the status picked in the admin list's menu and returns to
+// the list.
+func (a *App) handleStatus(w http.ResponseWriter, r *http.Request) {
+	status := r.FormValue("status")
+	if !validStatus[status] {
+		http.Error(w, "bad status", http.StatusBadRequest)
+		return
+	}
+	err := a.store.update(func(d *Data) error {
+		it := d.item(r.PathValue("id"))
+		if it == nil {
+			return errNotFound
+		}
+		if it.Status != status {
+			setStatus(it, status)
+			it.UpdatedAt = time.Now()
+		}
+		return nil
+	})
+	if errors.Is(err, errNotFound) {
+		http.NotFound(w, r)
+		return
+	}
+	if err != nil {
+		log.Printf("status: %v", err)
+		http.Error(w, "save failed", http.StatusInternalServerError)
+		return
+	}
+	redirectMsg(w, r, "/admin", "saved")
 }
 
 func (a *App) handleRefresh(w http.ResponseWriter, r *http.Request) {

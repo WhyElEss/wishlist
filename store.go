@@ -18,6 +18,7 @@ const (
 	statusActive   = "active"   // shown to visitors
 	statusReceived = "received" // gift arrived; archived
 	statusOwned    = "owned"    // got it elsewhere; hidden
+	statusPrivate  = "private"  // only the signed-in owner sees it on the site
 
 	defaultReserveDays = 14
 )

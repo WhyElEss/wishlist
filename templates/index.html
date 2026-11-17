@@ -3,16 +3,17 @@
 {{if not .Cards}}<p class="empty">{{t .Lang "empty"}}</p>{{end}}
 <div class="grid">
 {{range $i, $c := .Cards}}
-  {{/* The whole card leads to the next step; shop links come after it. */}}
-  {{$href := ""}}{{if .MineToken}}{{$href = print "/r/" .MineToken}}{{else if .Available}}{{$href = print "/item/" .ID}}{{end}}
-  <article class="card{{if .Priority}} hot{{end}}{{if .MineToken}} mine{{else if not .Available}} taken{{end}}{{if $href}} linked{{end}}">
+  {{/* The whole card leads to the next step; shop links come after it.
+       A private card (only the owner sees it) goes straight to the shop. */}}
+  {{$href := ""}}{{if .Private}}{{$href = .URL}}{{else if .MineToken}}{{$href = print "/r/" .MineToken}}{{else if .Available}}{{$href = print "/item/" .ID}}{{end}}
+  <article class="card{{if .Private}} private{{else if .Priority}} hot{{end}}{{if .Private}}{{else if .MineToken}} mine{{else if not .Available}} taken{{end}}{{if $href}} linked{{end}}">
     <div class="thumb">
       {{/* The first cards are on screen at once: no lazy loading, the first picture first. */}}
       {{if .Image}}<img src="/img/{{.Image}}" alt=""{{if .ImgW}} width="{{.ImgW}}" height="{{.ImgH}}"{{end}}{{if eq $i 0}} fetchpriority="high"{{else if ge $i 4}} loading="lazy"{{end}}>{{else}}<span class="noimg">🎁</span>{{end}}
     </div>
     <div class="body">
-      {{if .Priority}}<span class="badge hot">★ {{t $.Lang "priority_high"}}</span>{{end}}
-      <h2>{{if $href}}<a class="card-link" href="{{$href}}">{{.Title}}</a>{{else}}{{.Title}}{{end}}</h2>
+      {{if .Private}}<span class="badge private">{{t $.Lang "private_badge"}}</span>{{end}}{{if .Priority}}<span class="badge hot">★ {{t $.Lang "priority_high"}}</span>{{end}}
+      <h2>{{if $href}}<a class="card-link" href="{{$href}}"{{if .Private}} target="_blank" rel="noopener noreferrer"{{end}}>{{.Title}}</a>{{else}}{{.Title}}{{end}}</h2>
       <div class="meta">
         {{if .PriceText}}<span class="price{{if .Unavailable}} unavailable{{end}}">{{.PriceText}}</span>{{end}}
         <span class="site">{{.Site}}</span>
@@ -21,7 +22,9 @@
       {{if .Notes}}<p class="notes">{{.Notes}}</p>{{end}}
       {{if gt .Quantity 1}}<p class="qty">{{tf $.Lang "left" .Left .Quantity}}</p>{{end}}
       <div class="actions">
-        {{if .MineToken}}
+        {{if .Private}}
+          <span class="btn">{{t $.Lang "go_store"}}</span>
+        {{else if .MineToken}}
           <span class="btn mine">{{t $.Lang "yours"}} · {{t $.Lang "manage"}}</span>
         {{else if .Available}}
           <span class="btn primary">{{t $.Lang "gift_this"}}</span>

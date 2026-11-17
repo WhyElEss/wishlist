@@ -9,6 +9,7 @@
   --mine: #0f766e;
   --danger: #b91c1c;
   --hot: #dc2626;
+  --private: #16a34a;
   --ok-bg: #ecfdf5;
   --ok-text: #065f46;
   --warn-bg: #fffbeb;
@@ -32,6 +33,7 @@
     --mine: #2dd4bf;
     --danger: #f87171;
     --hot: #ef4444;
+    --private: #4ade80;
     --ok-bg: #0d2a22;
     --ok-text: #a7f3d0;
     --warn-bg: #2d2410;
@@ -52,6 +54,7 @@
   --mine: #2dd4bf;
   --danger: #f87171;
   --hot: #ef4444;
+  --private: #4ade80;
   --ok-bg: #0d2a22;
   --ok-text: #a7f3d0;
   --warn-bg: #2d2410;
@@ -126,6 +129,9 @@ button.link { background: none; border: 0; padding: 0; color: var(--muted); font
 .card.taken .thumb img { filter: grayscale(1); }
 .card.hot { border-color: var(--hot); box-shadow: 0 0 0 1px var(--hot); }
 .card.mine { border-color: var(--mine); box-shadow: 0 0 0 1px var(--mine); }
+/* Private gifts: only the signed-in owner sees them, framed green. */
+.card.private { border-color: var(--private); box-shadow: 0 0 0 1px var(--private); }
+.card.private.linked:hover { box-shadow: 0 0 0 1px var(--private), 0 8px 24px rgb(0 0 0 / .12); }
 
 .meta { display: flex; gap: 10px; align-items: baseline; flex-wrap: wrap; }
 .price { font-weight: 700; font-size: 1.05rem; }
@@ -134,6 +140,7 @@ button.link { background: none; border: 0; padding: 0; color: var(--muted); font
 .qty { margin: 0; font-size: .85rem; font-weight: 600; }
 .badge { align-self: flex-start; font-size: .75rem; font-weight: 700; padding: 2px 8px; border-radius: 99px; }
 .badge.hot { background: var(--hot); color: #fff; }
+.badge.private { background: var(--private); color: var(--surface); }
 
 .btn {
   display: inline-flex; align-items: center; justify-content: center; gap: 6px;
@@ -219,8 +226,14 @@ input:focus, select:focus, textarea:focus { outline: 2px solid var(--accent); ou
 table.items { width: 100%; border-collapse: collapse; background: var(--surface); border-radius: var(--radius); overflow: hidden; }
 table.items th, table.items td { padding: 10px 12px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: middle; }
 table.items th { font-size: .8rem; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: .03em; }
-table.items .mini { width: 48px; height: 48px; object-fit: contain; background: #fff; border-radius: 6px; }
+/* max-width: none — the global img rule (max-width: 100%) lets an auto-layout
+   table squeeze the picture column to a sliver when titles are long. */
+table.items .mini { width: 48px; height: 48px; max-width: none; object-fit: contain; background: #fff; border-radius: 6px; }
 table.items tr.status-received, table.items tr.status-owned { opacity: .5; }
+table.items tr.status-private td:first-child { box-shadow: inset 4px 0 0 var(--private); }
+.statusform { display: flex; gap: 6px; align-items: center; margin: 0; }
+.statusform select { width: auto; min-width: 0; }
+.statusform button[hidden] { display: none; }
 .edit { display: grid; grid-template-columns: 200px 1fr; gap: 24px; max-width: none; }
 .edit .preview img { width: 200px; height: 200px; object-fit: contain; background: #fff; border-radius: 10px; }
 

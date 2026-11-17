@@ -193,3 +193,13 @@ document.querySelectorAll("form[data-require-email]").forEach((form) => {
   input.addEventListener("input", update);
   update();
 });
+
+// Admin list: a status picked in a row's menu is saved at once; the Save
+// button is for browsers without this script.
+document.querySelectorAll("form.statusform").forEach((form) => {
+  const select = form.querySelector("select");
+  const button = form.querySelector("button");
+  if (!select) return;
+  if (button) button.hidden = true;
+  select.addEventListener("change", () => form.requestSubmit ? form.requestSubmit() : form.submit());
+});

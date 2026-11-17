@@ -45,7 +45,7 @@ func (a *App) refreshPrices(ctx context.Context) {
 	var targets []target
 	a.store.view(func(d *Data) {
 		for _, it := range d.Items {
-			if it.Status == statusActive {
+			if it.Status == statusActive || it.Status == statusPrivate {
 				targets = append(targets, target{it.ID, it.URL, it.Title})
 			}
 		}
