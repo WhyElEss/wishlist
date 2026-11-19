@@ -92,6 +92,7 @@ type adminPage struct {
 	base
 	HotRows    []adminRow // ★ "really want", shown as their own list on top
 	Rows       []adminRow
+	GotRows    []adminRow // received or already have, their own list at the bottom
 	SortOrder  string
 	SortOrders []string
 	Statuses   []string
@@ -125,9 +126,12 @@ func (a *App) handleAdmin(w http.ResponseWriter, r *http.Request) {
 					row.ReservedText += tf(lang, "adm_bought", bought)
 				}
 			}
-			if it.Priority > 0 {
+			switch {
+			case it.got():
+				p.GotRows = append(p.GotRows, row)
+			case it.Priority > 0:
 				p.HotRows = append(p.HotRows, row)
-			} else {
+			default:
 				p.Rows = append(p.Rows, row)
 			}
 		}
@@ -138,6 +142,9 @@ func (a *App) handleAdmin(w http.ResponseWriter, r *http.Request) {
 // handleOrder saves the order the admin dragged the rows into. A drag
 // always switches the list to manual order. When hot= is sent (the IDs in
 // the ★ list), the listed gifts get ★ and the other ones in ids lose it.
+// When got= is sent (the IDs in the bottom list), a listed gift that is not
+// received or owned yet becomes owned ("already have"), and one taken out of
+// that list becomes active again.
 func (a *App) handleOrder(w http.ResponseWriter, r *http.Request) {
 	ids := strings.Split(r.FormValue("ids"), ",")
 	if len(ids) == 0 || len(ids) > 1000 {
@@ -149,6 +156,11 @@ func (a *App) handleOrder(w http.ResponseWriter, r *http.Request) {
 	for _, id := range strings.Split(r.FormValue("hot"), ",") {
 		hot[id] = true
 	}
+	_, withGot := r.Form["got"]
+	got := map[string]bool{}
+	for _, id := range strings.Split(r.FormValue("got"), ",") {
+		got[id] = true
+	}
 	if err := a.store.update(func(d *Data) error {
 		if withHot {
 			for _, id := range ids {
@@ -157,6 +169,21 @@ func (a *App) handleOrder(w http.ResponseWriter, r *http.Request) {
 					if hot[id] {
 						it.Priority = 1
 					}
+				}
+			}
+		}
+		if withGot {
+			now := time.Now()
+			for _, id := range ids {
+				it := d.item(id)
+				switch {
+				case it == nil || got[id] == it.got():
+				case got[id]:
+					setStatus(it, statusOwned)
+					it.UpdatedAt = now
+				default:
+					setStatus(it, statusActive)
+					it.UpdatedAt = now
 				}
 			}
 		}

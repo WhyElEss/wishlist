@@ -14,8 +14,10 @@
   {{if .SortOrder}}{{t .Lang "list_sorted_hint"}}{{else}}{{t .Lang "list_order_hint"}}{{end}}
   {{if or (eq .SortOrder "price_asc") (eq .SortOrder "price_desc")}}{{t .Lang "sort_price_note"}}{{end}}
 </p>
-{{/* Two drag lists: ★ "really want" on top, everything else below. Moving a
-     row between them sets or clears ★; any drag switches the order to manual. */}}
+{{/* Three drag lists: ★ "really want" on top, everything else in the middle,
+     gifts already received or owned at the bottom. Moving a row into the top
+     list sets ★, into the bottom one marks it "already have", out of them
+     clears that; any drag switches the order to manual. */}}
 {{$cols := 8}}
 <div class="tablewrap">
 <table class="items" data-sortable="/admin/order">
@@ -31,7 +33,12 @@
   <tbody data-group="rest">
     <tr class="group"><th colspan="{{$cols}}">{{t .Lang "group_rest"}}</th></tr>
     {{range .Rows}}{{template "adminrow" (rowCtx $ .)}}{{end}}
-    {{if not (or .Rows .HotRows)}}<tr><td colspan="{{$cols}}" class="empty">{{t .Lang "list_empty"}}</td></tr>{{end}}
+    {{if not (or .Rows .HotRows .GotRows)}}<tr><td colspan="{{$cols}}" class="empty">{{t .Lang "list_empty"}}</td></tr>{{end}}
+  </tbody>
+  <tbody data-group="got">
+    <tr class="group"><th colspan="{{$cols}}">{{t .Lang "group_got"}}</th></tr>
+    <tr class="drop-empty"><td colspan="{{$cols}}">{{t .Lang "group_got_empty"}}</td></tr>
+    {{range .GotRows}}{{template "adminrow" (rowCtx $ .)}}{{end}}
   </tbody>
 </table>
 </div>

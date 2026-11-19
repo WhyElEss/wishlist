@@ -202,6 +202,12 @@ func (it *Item) left(now time.Time) int {
 	return 0
 }
 
+// got is true for a gift the owner already has (received or got elsewhere):
+// the admin shows it in its own list at the bottom, the site only to the owner.
+func (it *Item) got() bool {
+	return it.Status == statusReceived || it.Status == statusOwned
+}
+
 func (it *Item) available(now time.Time) bool {
 	return it.Status == statusActive && it.left(now) > 0
 }

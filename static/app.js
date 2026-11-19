@@ -65,25 +65,27 @@ document.addEventListener("click", (e) => {
 (function () {
   const table = document.querySelector("table[data-sortable]");
   if (!table) return;
-  const hotBody = table.querySelector('tbody[data-group="hot"]');
-  const restBody = table.querySelector('tbody[data-group="rest"]');
-  const restHead = restBody && restBody.querySelector("tr.group");
+  // The lists top to bottom: ★ "really want", the rest, already have.
+  const bodies = [...table.querySelectorAll("tbody[data-group]")];
+  const group = (name) => bodies.find((b) => b.dataset.group === name);
+  const head = (body) => body.querySelector("tr.group");
   const rows = () => [...table.querySelectorAll("tr[data-id]")];
-  const hotIds = () => (hotBody ? [...hotBody.querySelectorAll("tr[data-id]")].map((r) => r.dataset.id) : []);
-  const state = () => rows().map((r) => r.dataset.id).join(",") + "|" + hotIds().join(",");
+  const ids = (body) => (body ? [...body.querySelectorAll("tr[data-id]")].map((r) => r.dataset.id) : []);
+  const state = () => [rows().map((r) => r.dataset.id), ids(group("hot")), ids(group("got"))].map((l) => l.join(",")).join("|");
   let saved = state();
   const sortSelect = document.getElementById("sort");
 
   function save() {
     const now = state();
     if (now === saved) return;
-    const groupChanged = now.split("|")[1] !== saved.split("|")[1];
+    const [order, hot, got] = now.split("|");
+    const groupChanged = now.slice(order.length) !== saved.slice(saved.split("|")[0].length);
     const wasSorted = sortSelect && sortSelect.value !== "";
     table.classList.add("saving");
     fetch(table.dataset.sortable, {
       method: "POST",
       headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      body: "ids=" + encodeURIComponent(now.split("|")[0]) + "&hot=" + encodeURIComponent(now.split("|")[1]),
+      body: "ids=" + encodeURIComponent(order) + "&hot=" + encodeURIComponent(hot) + "&got=" + encodeURIComponent(got),
     }).then((r) => {
       table.classList.remove("saving");
       if (!r.ok) throw new Error(r.status);
@@ -97,12 +99,12 @@ document.addEventListener("click", (e) => {
   }
 
   function markTarget(row) {
-    for (const b of [hotBody, restBody]) if (b) b.classList.toggle("drop-here", !!row && row.parentNode === b);
+    for (const b of bodies) b.classList.toggle("drop-here", !!row && row.parentNode === b);
   }
 
   // The dragged row follows the pointer (translateY from its place in the
   // list); the list itself is reordered whenever the pointer crosses the
-  // middle of a neighbour or the line between the two groups.
+  // middle of a neighbour or of the heading between two lists.
   let drag = null;
   table.addEventListener("pointerdown", (e) => {
     const handle = e.target.closest(".drag");
@@ -130,11 +132,11 @@ document.addEventListener("click", (e) => {
       if (below && y > mid) other.after(row);
       else if (!below && y < mid) other.before(row);
     }
-    if (restHead) {
-      const box = restHead.getBoundingClientRect();
+    for (let i = 1; i < bodies.length; i++) {
+      const box = head(bodies[i]).getBoundingClientRect();
       const mid = box.top + box.height / 2;
-      if (row.parentNode === hotBody && y > mid) restHead.after(row);
-      else if (row.parentNode === restBody && y < mid) hotBody.append(row);
+      if (row.parentNode === bodies[i - 1] && y > mid) head(bodies[i]).after(row);
+      else if (row.parentNode === bodies[i] && y < mid) bodies[i - 1].append(row);
     }
     // Neighbours that moved slide from their old place to the new one.
     if (order() !== was) {
@@ -170,12 +172,13 @@ document.addEventListener("click", (e) => {
     e.preventDefault();
     const row = handle.closest("tr");
     const prev = row.previousElementSibling, next = row.nextElementSibling;
+    const i = bodies.indexOf(row.parentNode);
     if (e.key === "ArrowUp") {
       if (prev && prev.matches("tr[data-id]")) prev.before(row);
-      else if (row.parentNode === restBody && hotBody) hotBody.append(row);
+      else if (i > 0) bodies[i - 1].append(row);
     } else {
       if (next && next.matches("tr[data-id]")) next.after(row);
-      else if (row.parentNode === hotBody && restHead) restHead.after(row);
+      else if (i >= 0 && i < bodies.length - 1) head(bodies[i + 1]).after(row);
     }
     handle.focus();
     save();
