@@ -142,16 +142,24 @@ func (a *App) handleIndex(w http.ResponseWriter, r *http.Request) {
 			cards = append(cards, c)
 		}
 	})
-	// Gifts that can still be taken first (the owner's private ones among
-	// them); among them "really want" (★) above the rest; the owner's gifts
-	// already received or owned at the very end; within each group the order
-	// chosen in the admin panel.
-	sort.SliceStable(cards, func(i, j int) bool {
-		if cards[i].Got != cards[j].Got {
-			return cards[j].Got
+	// Gifts that can still be taken first, then reserved ones; after them
+	// the owner's private gifts, and the owner's gifts already received or
+	// owned at the very end. Within each group "really want" (★) above the
+	// rest, then the order chosen in the admin panel.
+	rank := func(c cardView) int {
+		switch {
+		case c.Got:
+			return 3
+		case c.Private:
+			return 2
+		case c.Available:
+			return 0
 		}
-		if oi, oj := cards[i].Available || cards[i].Private, cards[j].Available || cards[j].Private; oi != oj {
-			return oi
+		return 1
+	}
+	sort.SliceStable(cards, func(i, j int) bool {
+		if ri, rj := rank(cards[i]), rank(cards[j]); ri != rj {
+			return ri < rj
 		}
 		return cards[i].Priority > cards[j].Priority
 	})

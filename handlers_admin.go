@@ -92,6 +92,7 @@ type adminPage struct {
 	base
 	HotRows    []adminRow // ★ "really want", shown as their own list on top
 	Rows       []adminRow
+	PrivRows   []adminRow // private, their own list below the rest
 	GotRows    []adminRow // received or already have, their own list at the bottom
 	SortOrder  string
 	SortOrders []string
@@ -129,6 +130,8 @@ func (a *App) handleAdmin(w http.ResponseWriter, r *http.Request) {
 			switch {
 			case it.got():
 				p.GotRows = append(p.GotRows, row)
+			case it.Status == statusPrivate:
+				p.PrivRows = append(p.PrivRows, row)
 			case it.Priority > 0:
 				p.HotRows = append(p.HotRows, row)
 			default:
@@ -144,7 +147,8 @@ func (a *App) handleAdmin(w http.ResponseWriter, r *http.Request) {
 // the ★ list), the listed gifts get ★ and the other ones in ids lose it.
 // When got= is sent (the IDs in the bottom list), a listed gift that is not
 // received or owned yet becomes owned ("already have"), and one taken out of
-// that list becomes active again.
+// that list becomes active again. private= (the IDs in the private list)
+// works the same way with the status private.
 func (a *App) handleOrder(w http.ResponseWriter, r *http.Request) {
 	ids := strings.Split(r.FormValue("ids"), ",")
 	if len(ids) == 0 || len(ids) > 1000 {
@@ -160,6 +164,11 @@ func (a *App) handleOrder(w http.ResponseWriter, r *http.Request) {
 	got := map[string]bool{}
 	for _, id := range strings.Split(r.FormValue("got"), ",") {
 		got[id] = true
+	}
+	_, withPriv := r.Form["private"]
+	priv := map[string]bool{}
+	for _, id := range strings.Split(r.FormValue("private"), ",") {
+		priv[id] = true
 	}
 	if err := a.store.update(func(d *Data) error {
 		if withHot {
@@ -182,6 +191,21 @@ func (a *App) handleOrder(w http.ResponseWriter, r *http.Request) {
 					setStatus(it, statusOwned)
 					it.UpdatedAt = now
 				default:
+					setStatus(it, statusActive)
+					it.UpdatedAt = now
+				}
+			}
+		}
+		if withPriv {
+			now := time.Now()
+			for _, id := range ids {
+				it := d.item(id)
+				switch {
+				case it == nil || priv[id] == (it.Status == statusPrivate):
+				case priv[id]:
+					setStatus(it, statusPrivate)
+					it.UpdatedAt = now
+				case it.Status == statusPrivate:
 					setStatus(it, statusActive)
 					it.UpdatedAt = now
 				}

@@ -65,27 +65,27 @@ document.addEventListener("click", (e) => {
 (function () {
   const table = document.querySelector("table[data-sortable]");
   if (!table) return;
-  // The lists top to bottom: ★ "really want", the rest, already have.
+  // The lists top to bottom: ★ "really want", the rest, private, already have.
   const bodies = [...table.querySelectorAll("tbody[data-group]")];
   const group = (name) => bodies.find((b) => b.dataset.group === name);
   const head = (body) => body.querySelector("tr.group");
   const rows = () => [...table.querySelectorAll("tr[data-id]")];
   const ids = (body) => (body ? [...body.querySelectorAll("tr[data-id]")].map((r) => r.dataset.id) : []);
-  const state = () => [rows().map((r) => r.dataset.id), ids(group("hot")), ids(group("got"))].map((l) => l.join(",")).join("|");
+  const state = () => [rows().map((r) => r.dataset.id), ids(group("hot")), ids(group("got")), ids(group("private"))].map((l) => l.join(",")).join("|");
   let saved = state();
   const sortSelect = document.getElementById("sort");
 
   function save() {
     const now = state();
     if (now === saved) return;
-    const [order, hot, got] = now.split("|");
+    const [order, hot, got, priv] = now.split("|");
     const groupChanged = now.slice(order.length) !== saved.slice(saved.split("|")[0].length);
     const wasSorted = sortSelect && sortSelect.value !== "";
     table.classList.add("saving");
     fetch(table.dataset.sortable, {
       method: "POST",
       headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      body: "ids=" + encodeURIComponent(order) + "&hot=" + encodeURIComponent(hot) + "&got=" + encodeURIComponent(got),
+      body: "ids=" + encodeURIComponent(order) + "&hot=" + encodeURIComponent(hot) + "&got=" + encodeURIComponent(got) + "&private=" + encodeURIComponent(priv),
     }).then((r) => {
       table.classList.remove("saving");
       if (!r.ok) throw new Error(r.status);

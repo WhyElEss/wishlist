@@ -6,6 +6,7 @@ import (
 	"net/url"
 	"strings"
 	"testing"
+	"time"
 )
 
 // Private gifts are on the list only for the signed-in owner, framed green
@@ -100,6 +101,64 @@ func TestPriceCheckIncludesPrivate(t *testing.T) {
 		}
 		if d.item("o").Price != "" {
 			t.Error("owned gift checked")
+		}
+	})
+}
+
+// Private gifts have their own admin list between the rest and the got list;
+// dragging into it makes a gift private, out of it active again. On the site
+// the owner sees them after the reserved gifts and before the got ones.
+func TestPrivateList(t *testing.T) {
+	srv, app := newTestApp(t)
+	app.store.update(func(d *Data) error {
+		d.Items = []*Item{
+			{ID: "p", URL: "https://shop.example/p", Title: "Private gift", Quantity: 1, Status: statusPrivate},
+			{ID: "o", URL: "https://shop.example/o", Title: "Owned gift", Quantity: 1, Status: statusOwned},
+			{ID: "t", URL: "https://shop.example/t", Title: "Taken gift", Quantity: 1, Status: statusActive,
+				Reservations: []*Reservation{{ID: "x", Token: "tok", CreatedAt: time.Now(), ExpiresAt: time.Now().Add(time.Hour)}}},
+			{ID: "a", URL: "https://shop.example/a", Title: "Active gift", Quantity: 1, Status: statusActive},
+		}
+		return nil
+	})
+	admin := newClient(t)
+	admin.PostForm(srv.URL+"/admin/login", url.Values{"password": {"admin-password"}})
+
+	page := getLang(t, admin, srv.URL+"/admin", "en")
+	rest, priv, got := strings.Index(page, `data-group="rest"`), strings.Index(page, `data-group="private"`), strings.Index(page, `data-group="got"`)
+	if !(rest > 0 && rest < priv && priv < got) {
+		t.Fatalf("lists out of order: rest %d, private %d, got %d", rest, priv, got)
+	}
+	if p := page[priv:got]; !strings.Contains(p, `data-id="p"`) || strings.Contains(p, `data-id="a"`) || strings.Contains(p, `data-id="o"`) {
+		t.Error("the private list must hold exactly the private gift")
+	}
+
+	owner := getLang(t, admin, srv.URL+"/", "en")
+	order := []int{strings.Index(owner, "Active gift"), strings.Index(owner, "Taken gift"), strings.Index(owner, "Private gift"), strings.Index(owner, "Owned gift")}
+	for i := 1; i < len(order); i++ {
+		if order[i-1] < 0 || order[i-1] > order[i] {
+			t.Fatalf("site order for the owner %v, want active, reserved, private, got", order)
+		}
+	}
+
+	// a dragged into the private list, p out of it; o stays in the got list.
+	resp, err := admin.PostForm(srv.URL+"/admin/order", url.Values{"ids": {"p,t,a,o"}, "hot": {""}, "got": {"o"}, "private": {"a"}})
+	if err != nil || resp.StatusCode != http.StatusNoContent {
+		t.Fatalf("order: %v %v", err, resp)
+	}
+	want := map[string]string{"a": statusPrivate, "p": statusActive, "o": statusOwned, "t": statusActive}
+	app.store.view(func(d *Data) {
+		for id, status := range want {
+			if s := d.item(id).Status; s != status {
+				t.Errorf("%s: status %q, want %q", id, s, status)
+			}
+		}
+	})
+
+	// Private to got in one drag: the got list wins.
+	admin.PostForm(srv.URL+"/admin/order", url.Values{"ids": {"p,t,a,o"}, "hot": {""}, "got": {"a,o"}, "private": {""}})
+	app.store.view(func(d *Data) {
+		if s := d.item("a").Status; s != statusOwned {
+			t.Errorf("private dragged to got: %q, want owned", s)
 		}
 	})
 }
